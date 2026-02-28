@@ -304,5 +304,8 @@ SELECT * FROM todos;
 
 Consider pagination later if there is time.
 
+Also a composite index will make the update performant
 
-
+```sql
+CREATE INDEX idx_todos_status_due_at ON todos(status, due_at);
+```
