@@ -321,3 +321,6 @@ Setup the initial spring boot project
 Creates rest api endpoints for post create and get single todo
 
 
+Added the database update for move state to DUE
+
+Added rest endpoint for get all todos

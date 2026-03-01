@@ -2,6 +2,7 @@ package com.demo.todo.controller;
 
 import com.demo.todo.dto.CreateTodoRequest;
 import com.demo.todo.dto.TodoResponse;
+import com.demo.todo.dto.TodosListResponse;
 import com.demo.todo.service.TodoService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -28,6 +29,12 @@ public class TodoRestController {
     @GetMapping("/{id}")
     public ResponseEntity<TodoResponse> getTodoById(@PathVariable Long id) {
         TodoResponse response = todoService.getTodoById(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<TodosListResponse> listTodos(@RequestParam(defaultValue = "false") boolean all) {
+        TodosListResponse response = todoService.listTodos(all);
         return ResponseEntity.ok(response);
     }
 }

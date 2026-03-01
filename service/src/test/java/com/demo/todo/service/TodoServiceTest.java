@@ -3,11 +3,13 @@ package com.demo.todo.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.demo.todo.dto.CreateTodoRequest;
 import com.demo.todo.dto.TodoResponse;
+import com.demo.todo.dto.TodosListResponse;
 import com.demo.todo.exception.InvalidTodoInputException;
 import com.demo.todo.exception.TodoNotFoundException;
 import com.demo.todo.model.Todo;
@@ -108,21 +110,68 @@ class TodoServiceTest {
         todo.setCreatedAt(now);
         todo.setDueAt(now.plusSeconds(10));
 
-        when(dataService.findById(3L)).thenReturn(Optional.of(todo));
+        when(dataService.getByIdWithOverdueSync(3L, now)).thenReturn(Optional.of(todo));
 
         TodoResponse response = todoService.getTodoById(3L);
 
         assertThat(response.id()).isEqualTo(3L);
         assertThat(response.description()).isEqualTo("Read book");
         assertThat(response.status()).isEqualTo(TodoStatus.NOT_DONE);
+        verify(dataService).getByIdWithOverdueSync(3L, now);
     }
 
     @Test
     void getTodoByIdNotFoundThrowsException() {
-        when(dataService.findById(99L)).thenReturn(Optional.empty());
+        Instant now = Instant.now(fixedClock);
+        when(dataService.getByIdWithOverdueSync(99L, now)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> todoService.getTodoById(99L))
                 .isInstanceOf(TodoNotFoundException.class)
                 .hasMessage("Todo not found for id: 99");
+    }
+
+    @Test
+    void listTodosFalseBuildsListResponse() {
+        Instant now = Instant.now(fixedClock);
+
+        Todo todo = new Todo();
+        todo.setId(1L);
+        todo.setDescription("Task");
+        todo.setStatus(TodoStatus.NOT_DONE);
+        todo.setCreatedAt(now.minusSeconds(10));
+        todo.setDueAt(now.plusSeconds(10));
+        todo.setDoneAt(null);
+
+        when(dataService.listWithOverdueSync(false, now)).thenReturn(java.util.List.of(todo));
+
+        TodosListResponse response = todoService.listTodos(false);
+
+        assertThat(response.meta().all()).isFalse();
+        assertThat(response.meta().count()).isEqualTo(1);
+        assertThat(response.items()).hasSize(1);
+        assertThat(response.items().getFirst().status()).isEqualTo(TodoStatus.NOT_DONE);
+        verify(dataService).listWithOverdueSync(false, now);
+    }
+
+    @Test
+    void listTodosTrueBuildsListResponseWithPastDue() {
+        Instant now = Instant.now(fixedClock);
+
+        Todo pastDue = new Todo();
+        pastDue.setId(2L);
+        pastDue.setDescription("Past due task");
+        pastDue.setStatus(TodoStatus.PAST_DUE);
+        pastDue.setCreatedAt(now.minusSeconds(20));
+        pastDue.setDueAt(now.minusSeconds(5));
+        pastDue.setDoneAt(null);
+
+        when(dataService.listWithOverdueSync(eq(true), eq(now))).thenReturn(java.util.List.of(pastDue));
+
+        TodosListResponse response = todoService.listTodos(true);
+
+        assertThat(response.meta().all()).isTrue();
+        assertThat(response.meta().count()).isEqualTo(1);
+        assertThat(response.items().getFirst().status()).isEqualTo(TodoStatus.PAST_DUE);
+        verify(dataService).listWithOverdueSync(true, now);
     }
 }

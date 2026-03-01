@@ -9,6 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.demo.todo.dto.TodoResponse;
+import com.demo.todo.dto.TodosListMeta;
+import com.demo.todo.dto.TodosListResponse;
 import com.demo.todo.exception.GlobalExceptionHandler;
 import com.demo.todo.exception.TodoNotFoundException;
 import com.demo.todo.model.TodoStatus;
@@ -25,6 +27,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import java.util.List;
 
 @WebMvcTest(TodoRestController.class)
 @Import(GlobalExceptionHandler.class)
@@ -89,6 +92,46 @@ class TodoRestControllerTest {
                 .andExpect(jsonPath("$.message").value("Todo not found for id: 99"))
                 .andExpect(jsonPath("$.path").value("/todos/99"))
                 .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
+    }
+
+    @Test
+    void listTodosDefaultReturnsMetaAndItems() throws Exception {
+        TodoResponse item = new TodoResponse(
+                1L,
+                "Task one",
+                TodoStatus.NOT_DONE,
+                Instant.parse("2026-03-01T09:00:00Z"),
+                Instant.parse("2026-03-01T11:00:00Z"),
+                null
+        );
+        TodosListResponse response = new TodosListResponse(List.of(item), new TodosListMeta(1, false));
+        when(todoService.listTodos(false)).thenReturn(response);
+
+        mockMvc.perform(get("/todos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].id").value(1))
+                .andExpect(jsonPath("$.meta.count").value(1))
+                .andExpect(jsonPath("$.meta.all").value(false));
+    }
+
+    @Test
+    void listTodosAllTrueReturnsMetaAllTrue() throws Exception {
+        TodoResponse item = new TodoResponse(
+                2L,
+                "Past due task",
+                TodoStatus.PAST_DUE,
+                Instant.parse("2026-03-01T08:00:00Z"),
+                Instant.parse("2026-03-01T09:00:00Z"),
+                null
+        );
+        TodosListResponse response = new TodosListResponse(List.of(item), new TodosListMeta(1, true));
+        when(todoService.listTodos(true)).thenReturn(response);
+
+        mockMvc.perform(get("/todos").param("all", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].status").value("PAST_DUE"))
+                .andExpect(jsonPath("$.meta.count").value(1))
+                .andExpect(jsonPath("$.meta.all").value(true));
     }
 
     @TestConfiguration

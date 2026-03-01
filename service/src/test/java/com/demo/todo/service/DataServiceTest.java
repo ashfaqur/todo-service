@@ -5,7 +5,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.demo.todo.model.Todo;
+import com.demo.todo.model.TodoStatus;
 import com.demo.todo.repository.TodoRepository;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,5 +63,50 @@ class DataServiceTest {
 
         assertThat(result).isEmpty();
         verify(todoRepository).findById(9L);
+    }
+
+    @Test
+    void getByIdWithOverdueSyncRunsUpdateThenFetch() {
+        Instant now = Instant.parse("2026-03-01T10:00:00Z");
+        Todo todo = new Todo();
+        todo.setId(8L);
+
+        when(todoRepository.findById(8L)).thenReturn(Optional.of(todo));
+
+        Optional<Todo> result = dataService.getByIdWithOverdueSync(8L, now);
+
+        assertThat(result).contains(todo);
+        verify(todoRepository).markOverdueAsPastDueById(8L, now);
+        verify(todoRepository).findById(8L);
+    }
+
+    @Test
+    void listWithOverdueSyncFalseUpdatesThenReadsNotDone() {
+        Instant now = Instant.parse("2026-03-01T10:00:00Z");
+        Todo todo = new Todo();
+        todo.setId(10L);
+
+        when(todoRepository.findByStatusOrderByCreatedAtAsc(TodoStatus.NOT_DONE)).thenReturn(List.of(todo));
+
+        List<Todo> result = dataService.listWithOverdueSync(false, now);
+
+        assertThat(result).containsExactly(todo);
+        verify(todoRepository).markOverdueAsPastDue(now);
+        verify(todoRepository).findByStatusOrderByCreatedAtAsc(TodoStatus.NOT_DONE);
+    }
+
+    @Test
+    void listWithOverdueSyncTrueUpdatesThenReadsAllSorted() {
+        Instant now = Instant.parse("2026-03-01T10:00:00Z");
+        Todo todo = new Todo();
+        todo.setId(11L);
+
+        when(todoRepository.findAllByOrderByCreatedAtAsc()).thenReturn(List.of(todo));
+
+        List<Todo> result = dataService.listWithOverdueSync(true, now);
+
+        assertThat(result).containsExactly(todo);
+        verify(todoRepository).markOverdueAsPastDue(now);
+        verify(todoRepository).findAllByOrderByCreatedAtAsc();
     }
 }

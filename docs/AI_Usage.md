@@ -319,7 +319,315 @@ Currently  the TodoService is mixing logic with acces to jpa repository.
 
 Plan  a new service called DataService which will have the todoRepository and put data access code with transactional there only
 
-e.g.
 
-  Todo savedTodo = todoRepository.save(todo);
+Review the API_Design.md again.
+Inlucde in the plan to add overdue (PAST_DUE) sync logic and also add a new REST endpoint for listing todos.
 
+
+ Get all not-done (or all)
+
+GET /todos?all=true|false
+
+- all=false (default): return items with status NOT_DONE only
+- all=true: return all items (NOT_DONE, DONE, PAST_DUE)
+
+Past-due auto-update
+- When listing, update overdue NOT_DONE items to become PAST_DUE before returning.
+- Persist the changes
+
+-> 200 OK
+
+```json
+{
+  "items": [
+    {
+      "id": 123,
+      "description": "Pay rent",
+      "status": "NOT_DONE",
+      "createdAt": "2026-02-28T09:30:00Z",
+      "dueAt": "2026-03-01T10:00:00Z",
+      "doneAt": null
+    }
+  ],
+  "meta": {
+    "count": 1,
+    "all": false
+  }
+}
+```
+
+Past-due behavior requirements:
+1) Bulk update for list:
+   - Before returning list results, run a DB-level bulk update to persist overdue transitions:
+     UPDATE todos
+     SET status = 'PAST_DUE'
+     WHERE status = 'NOT_DONE'
+       AND due_at < :now;
+   - Then query and return:
+     - if all=false: SELECT items where status='NOT_DONE'
+     - if all=true: SELECT all items
+   - Use `Instant now = Instant.now(clock)` in service and pass `now` as parameter; do NOT use CURRENT_TIMESTAMP in SQL.
+
+2) Single-item consistency:
+   - For GET /todos/{id}, ensure the item is refreshed too:
+     UPDATE todos
+     SET status = 'PAST_DUE'
+     WHERE id = :id
+       AND status = 'NOT_DONE'
+       AND due_at < :now;
+     then fetch by id.
+   - Only NOT_DONE can transition to PAST_DUE; DONE stays DONE even if overdue.
+
+Implementation expectations:
+- Add repository methods using @Modifying + @Query (native SQL is fine for UPDATE).
+- Add service methods:
+  - TodoResponse getTodoById(Long id) should do update-before-fetch.
+  - A new method to list todos, e.g. TodosListResponse listTodos(boolean all).
+- Add controller endpoint:
+  - @GetMapping
+    public ResponseEntity<TodosListResponse> listTodos(@RequestParam(defaultValue="false") boolean all)
+- Ensure transaction boundaries:
+  - update + fetch should be consistent within a service-layer transaction.
+  - bulk update + list query should be consistent within a service-layer transaction.
+
+Testing:
+- Add/adjust tests to cover:
+  - list endpoint triggers bulk overdue update (overdue NOT_DONE become PAST_DUE and are excluded from all=false)
+  - list endpoint with all=true returns PAST_DUE items too
+  - single GET updates overdue NOT_DONE to PAST_DUE
+- Keep @WebMvcTest for controller tests (mock service).
+- Use deterministic time with fixed Clock for service/integration tests.
+- Prefer an integration-style test (@SpringBootTest or @DataJpaTest) for verifying the bulk update actually persists in H2.
+
+Deliverable:
+Write an updated step-by-step implementation plan (not full code) including:
+- New DTO for list response (items + meta)
+- Repository update/query methods
+- Service flow for bulk + single refresh
+- Controller changes
+- Test plan updates
+Do not add pagination, scheduler, authentication, or extra endpoints beyond GET /todos.
+
+
+Add to the plan
+
+Consider  Use @Modifying(clearAutomatically = true) to avoid stale persistence context issues.
+
+sort order by createdAt for default ordering
+
+findAll()
+findByStatus()
+
+## Updated Implementation Plan: Overdue Sync + `GET /todos` List Endpoint
+
+### Summary
+Extend the current implementation to add overdue synchronization (`NOT_DONE -> PAST_DUE`) on reads and introduce `GET /todos?all=true|false`. Keep `DataService` as the only repository-access and transaction boundary. Use deterministic time via injected `Clock` (`Instant.now(clock)`) and parameterized SQL (no `CURRENT_TIMESTAMP`). Add `@Modifying(clearAutomatically = true)` for update queries and enforce default list ordering by `createdAt`.
+
+### Goals
+1. Add DB-level overdue sync for:
+   1. single read (`GET /todos/{id}`)
+   2. list read (`GET /todos`)
+2. Add list response DTO (`items + meta`).
+3. Keep transactions for update+fetch and bulk-update+list consistent in `DataService`.
+4. Apply default sort order by `createdAt` for both list modes (`all=true`, `all=false`).
+
+### Out of Scope
+1. Pagination
+2. Scheduler
+3. Authentication
+4. Additional endpoints beyond `GET /todos` (plus existing `POST /todos`, `GET /todos/{id}`)
+5. Any non-read bulk operations
+
+---
+
+### API/Contract Changes
+
+#### 1) New endpoint
+- `GET /todos?all=true|false`
+- default `all=false`
+- response:
+  - `items`: array of `TodoResponse`
+  - `meta`: `{ count, all }`
+
+#### 2) Existing endpoint behavior change
+- `GET /todos/{id}` now syncs overdue status before fetch:
+  - overdue + `NOT_DONE` becomes `PAST_DUE`
+  - `DONE` stays `DONE` even if overdue
+
+---
+
+### DTO Additions
+
+1. `TodosListResponse`
+   - fields:
+     - `List<TodoResponse> items`
+     - `TodosListMeta meta`
+2. `TodosListMeta`
+   - fields:
+     - `int count`
+     - `boolean all`
+
+No changes to `TodoResponse` or error response schema.
+
+---
+
+### Repository Changes (`TodoRepository`)
+
+Add methods:
+
+1. Bulk overdue transition:
+   - `@Modifying(clearAutomatically = true)`
+   - `@Query` native:
+     - `UPDATE todos SET status='PAST_DUE' WHERE status='NOT_DONE' AND due_at < :now`
+   - `int markOverdueAsPastDue(Instant now)`
+
+2. Single-item overdue transition:
+   - `@Modifying(clearAutomatically = true)`
+   - `@Query` native:
+     - `UPDATE todos SET status='PAST_DUE' WHERE id=:id AND status='NOT_DONE' AND due_at < :now`
+   - `int markOverdueAsPastDueById(Long id, Instant now)`
+
+3. Sorted read methods (default order by createdAt):
+   - `List<Todo> findAllByOrderByCreatedAtAsc()`
+   - `List<Todo> findByStatusOrderByCreatedAtAsc(TodoStatus status)`
+
+Notes:
+- `findAll()` / `findByStatus()` are replaced in list flow by sorted variants.
+- `clearAutomatically = true` prevents stale persistence-context reads after bulk updates.
+- `DONE` never transitions in update predicates.
+
+---
+
+### Service Layer Design
+
+## `TodoService` (business orchestration only)
+Keeps mapping and high-level flow; delegates persistence/transactional consistency to `DataService`.
+
+1. `createTodo(CreateTodoRequest request)` unchanged.
+2. `getTodoById(Long id)`:
+   - `now = Instant.now(clock)`
+   - call `dataService.getByIdWithOverdueSync(id, now)`
+   - throw `TodoNotFoundException` if empty
+   - map to `TodoResponse`
+3. new `listTodos(boolean all)`:
+   - `now = Instant.now(clock)`
+   - call `dataService.listWithOverdueSync(all, now)`
+   - map entities to `TodoResponse`
+   - return `TodosListResponse(items, meta(count, all))`
+
+## `DataService` (repository + transactions)
+Owns all repository calls and transaction boundaries.
+
+1. existing `save(Todo)` remains transactional.
+2. existing `findById(Long)` may remain for non-sync usage.
+3. new `@Transactional` `Optional<Todo> getByIdWithOverdueSync(Long id, Instant now)`:
+   - run `markOverdueAsPastDueById(id, now)`
+   - then `findById(id)`
+4. new `@Transactional` `List<Todo> listWithOverdueSync(boolean all, Instant now)`:
+   - run `markOverdueAsPastDue(now)`
+   - if `all=true`: `findAllByOrderByCreatedAtAsc()`
+   - else: `findByStatusOrderByCreatedAtAsc(TodoStatus.NOT_DONE)`
+
+---
+
+### Controller Changes (`TodoRestController`)
+
+1. Keep existing:
+   - `POST /todos`
+   - `GET /todos/{id}`
+2. Add:
+   - `@GetMapping`
+   - `ResponseEntity<TodosListResponse> listTodos(@RequestParam(defaultValue = "false") boolean all)`
+   - delegate to `todoService.listTodos(all)`
+   - return `200 OK`
+
+---
+
+### Transaction and Consistency Rules
+
+1. Single-item read consistency:
+   - update-by-id + fetch in same `DataService` transaction.
+2. List consistency:
+   - bulk update + list query in same `DataService` transaction.
+3. Persistence context freshness:
+   - update queries use `@Modifying(clearAutomatically = true)` to avoid stale reads in same transaction.
+
+---
+
+### Step-by-Step Implementation Sequence
+
+1. Add DTOs:
+   - `TodosListResponse`, `TodosListMeta`
+2. Extend `TodoRepository`:
+   - two `@Modifying(clearAutomatically = true)` update queries
+   - sorted list methods:
+     - `findAllByOrderByCreatedAtAsc`
+     - `findByStatusOrderByCreatedAtAsc`
+3. Extend `DataService`:
+   - `getByIdWithOverdueSync(id, now)`
+   - `listWithOverdueSync(all, now)`
+4. Update `TodoService`:
+   - single GET uses sync-aware data call
+   - add `listTodos(boolean all)`
+5. Update `TodoRestController` with `GET /todos`.
+6. Run and fix tests.
+
+---
+
+### Testing Plan
+
+## 1) Repository/Integration-style tests (`@DataJpaTest` preferred)
+Verify H2 persistence behavior:
+
+1. `markOverdueAsPastDue(now)` updates only overdue `NOT_DONE`.
+2. `markOverdueAsPastDueById(id, now)` updates only matching overdue `NOT_DONE`.
+3. `DONE` never updated.
+4. After update, sorted readers return ascending `createdAt` order.
+
+## 2) `DataService` unit tests (Mockito)
+Add/adjust:
+1. `getByIdWithOverdueSync`:
+   - verifies update call then find call.
+2. `listWithOverdueSync(all=false)`:
+   - verifies bulk update then `findByStatusOrderByCreatedAtAsc(NOT_DONE)`.
+3. `listWithOverdueSync(all=true)`:
+   - verifies bulk update then `findAllByOrderByCreatedAtAsc()`.
+
+## 3) `TodoService` unit tests (Mockito + fixed Clock)
+Add/adjust:
+1. `getTodoById` delegates with captured `now` to sync-aware data method.
+2. `listTodos(false)` builds `items + meta`, excludes past-due in fixture.
+3. `listTodos(true)` builds `items + meta`, includes past-due in fixture.
+4. keep existing create tests unchanged.
+
+## 4) Controller tests (`@WebMvcTest`, mocked `TodoService`)
+Add:
+1. `GET /todos` default -> `meta.all=false`, expected `count`.
+2. `GET /todos?all=true` -> `meta.all=true`, expected `count`.
+3. Preserve existing tests for `POST /todos` and `GET /todos/{id}`.
+
+Controller tests validate contract only, not DB update mechanics.
+
+---
+
+### Acceptance Criteria
+
+1. `GET /todos/{id}` syncs overdue `NOT_DONE` to `PAST_DUE` before fetch.
+2. `GET /todos` performs bulk overdue sync before list query.
+3. `all=false` returns only `NOT_DONE`.
+4. `all=true` returns all statuses.
+5. Returned lists are sorted by `createdAt` ascending by default.
+6. SQL updates use `now` parameter from `Instant.now(clock)` (no DB current-time function).
+7. Repository update methods use `@Modifying(clearAutomatically = true)`.
+8. `DataService` remains sole repository-access layer with transaction ownership.
+9. Tests pass with deterministic time and integration verification in H2.
+
+---
+
+### Assumptions/Defaults
+
+1. Default ordering is ascending by `createdAt` (`oldest first`).
+2. `meta.count` equals `items.size()`.
+3. Error response structure remains unchanged.
+4. No pagination keys added to list response.
+5. Existing behaviors for POST and validation remain unchanged.
