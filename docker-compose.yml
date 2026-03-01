@@ -1,0 +1,12 @@
+services:
+  server:
+    build: ./service
+    ports:
+      - "8080:8080"
+    container_name: todo-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
