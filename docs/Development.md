@@ -5,6 +5,7 @@
   - [Data model](#data-model)
   - [API Design](#api-design)
   - [Update during get all](#update-during-get-all)
+  - [Project setup](#project-setup)
 
 ## Objective
 
@@ -309,3 +310,8 @@ Also a composite index will make the update performant
 ```sql
 CREATE INDEX idx_todos_status_due_at ON todos(status, due_at);
 ```
+
+## Project setup
+
+Setup the initial spring boot project
+
