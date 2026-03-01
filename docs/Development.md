@@ -6,6 +6,7 @@
   - [API Design](#api-design)
   - [Update during get all](#update-during-get-all)
   - [Project setup](#project-setup)
+  - [APIs](#apis)
 
 ## Objective
 
@@ -314,4 +315,9 @@ CREATE INDEX idx_todos_status_due_at ON todos(status, due_at);
 ## Project setup
 
 Setup the initial spring boot project
+
+## APIs
+
+Creates rest api endpoints for post create and get single todo
+
 

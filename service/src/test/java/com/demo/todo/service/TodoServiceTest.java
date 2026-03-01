@@ -12,7 +12,6 @@ import com.demo.todo.exception.InvalidTodoInputException;
 import com.demo.todo.exception.TodoNotFoundException;
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
-import com.demo.todo.repository.TodoRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -27,7 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class TodoServiceTest {
 
     @Mock
-    private TodoRepository todoRepository;
+    private DataService dataService;
 
     private TodoService todoService;
     private Clock fixedClock;
@@ -35,7 +34,7 @@ class TodoServiceTest {
     @BeforeEach
     void setUp() {
         fixedClock = Clock.fixed(Instant.parse("2026-03-01T10:00:00Z"), ZoneOffset.UTC);
-        todoService = new TodoService(todoRepository, fixedClock);
+        todoService = new TodoService(dataService, fixedClock);
     }
 
     @Test
@@ -51,7 +50,7 @@ class TodoServiceTest {
         savedTodo.setDueAt(now);
         savedTodo.setDoneAt(null);
 
-        when(todoRepository.save(any(Todo.class))).thenReturn(savedTodo);
+        when(dataService.save(any(Todo.class))).thenReturn(savedTodo);
 
         TodoResponse response = todoService.createTodo(request);
 
@@ -61,7 +60,7 @@ class TodoServiceTest {
         assertThat(response.createdAt()).isEqualTo(now);
         assertThat(response.dueAt()).isEqualTo(now);
         assertThat(response.doneAt()).isNull();
-        verify(todoRepository).save(any(Todo.class));
+        verify(dataService).save(any(Todo.class));
     }
 
     @Test
@@ -78,7 +77,7 @@ class TodoServiceTest {
         savedTodo.setDueAt(dueAt);
         savedTodo.setDoneAt(null);
 
-        when(todoRepository.save(any(Todo.class))).thenReturn(savedTodo);
+        when(dataService.save(any(Todo.class))).thenReturn(savedTodo);
 
         TodoResponse response = todoService.createTodo(request);
 
@@ -109,7 +108,7 @@ class TodoServiceTest {
         todo.setCreatedAt(now);
         todo.setDueAt(now.plusSeconds(10));
 
-        when(todoRepository.findById(3L)).thenReturn(Optional.of(todo));
+        when(dataService.findById(3L)).thenReturn(Optional.of(todo));
 
         TodoResponse response = todoService.getTodoById(3L);
 
@@ -120,7 +119,7 @@ class TodoServiceTest {
 
     @Test
     void getTodoByIdNotFoundThrowsException() {
-        when(todoRepository.findById(99L)).thenReturn(Optional.empty());
+        when(dataService.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> todoService.getTodoById(99L))
                 .isInstanceOf(TodoNotFoundException.class)

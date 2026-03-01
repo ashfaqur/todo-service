@@ -312,3 +312,14 @@ Implement only two endpoints using the required package structure and layering, 
 2. Error code names are project-defined (`TODO_NOT_FOUND`, `INVALID_REQUEST`) while shape follows `API_Design.md`.
 3. DB constraint `due_at >= created_at` is mirrored in service validation by shared `now` capture.
 4. No additional endpoints, scheduler, pagination, auth, or bulk overdue updates in this phase.
+
+
+
+Currently  the TodoService is mixing logic with acces to jpa repository.
+
+Plan  a new service called DataService which will have the todoRepository and put data access code with transactional there only
+
+e.g.
+
+  Todo savedTodo = todoRepository.save(todo);
+

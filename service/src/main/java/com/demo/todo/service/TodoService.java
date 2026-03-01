@@ -6,24 +6,21 @@ import com.demo.todo.exception.InvalidTodoInputException;
 import com.demo.todo.exception.TodoNotFoundException;
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
-import com.demo.todo.repository.TodoRepository;
 import java.time.Clock;
 import java.time.Instant;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TodoService {
 
-    private final TodoRepository todoRepository;
+    private final DataService dataService;
     private final Clock clock;
 
-    public TodoService(TodoRepository todoRepository, Clock clock) {
-        this.todoRepository = todoRepository;
+    public TodoService(DataService dataService, Clock clock) {
+        this.dataService = dataService;
         this.clock = clock;
     }
 
-    @Transactional
     public TodoResponse createTodo(CreateTodoRequest request) {
         Instant now = Instant.now(clock);
         if (request.dueAt().isBefore(now)) {
@@ -37,13 +34,12 @@ public class TodoService {
         todo.setDueAt(request.dueAt());
         todo.setDoneAt(null);
 
-        Todo savedTodo = todoRepository.save(todo);
+        Todo savedTodo = dataService.save(todo);
         return toResponse(savedTodo);
     }
 
-    @Transactional(readOnly = true)
     public TodoResponse getTodoById(Long id) {
-        Todo todo = todoRepository.findById(id)
+        Todo todo = dataService.findById(id)
                 .orElseThrow(() -> new TodoNotFoundException(id));
         return toResponse(todo);
     }
