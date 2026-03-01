@@ -37,6 +37,21 @@ public class GlobalExceptionHandler {
     }
 
     @ResponseBody
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(PastDueImmutableException.class)
+    public ErrorResponse handlePastDueImmutable(PastDueImmutableException ex, HttpServletRequest request) {
+        return buildErrorResponse("PAST_DUE_IMMUTABLE", ex.getMessage(), request);
+    }
+
+    @ResponseBody
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(OverdueReopenForbiddenException.class)
+    public ErrorResponse handleOverdueReopenForbidden(
+            OverdueReopenForbiddenException ex, HttpServletRequest request) {
+        return buildErrorResponse("OVERDUE_REOPEN_FORBIDDEN", ex.getMessage(), request);
+    }
+
+    @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ErrorResponse handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest request) {

@@ -114,7 +114,7 @@ POST /todos/{id}/done
 
 POST /todos/{id}/not-done
 
-- If current status is DONE → set NOT_DONE, set doneAt = null
+- If current status is DONE → set NOT_DONE, set doneAt = null (only if its not past the due date)
 - If current status is NOT_DONE → idempotent:
 
 -> 200 OK

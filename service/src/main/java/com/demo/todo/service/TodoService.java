@@ -2,6 +2,7 @@ package com.demo.todo.service;
 
 import com.demo.todo.dto.CreateTodoRequest;
 import com.demo.todo.dto.TodoResponse;
+import com.demo.todo.dto.UpdateDescriptionRequest;
 import com.demo.todo.dto.TodosListMeta;
 import com.demo.todo.dto.TodosListResponse;
 import com.demo.todo.exception.InvalidTodoInputException;
@@ -55,6 +56,24 @@ public class TodoService {
                 .toList();
         TodosListMeta meta = new TodosListMeta(items.size(), all);
         return new TodosListResponse(items, meta);
+    }
+
+    public TodoResponse updateDescription(Long id, UpdateDescriptionRequest request) {
+        Instant now = Instant.now(clock);
+        Todo updated = dataService.updateDescription(id, request.description().trim(), now);
+        return toResponse(updated);
+    }
+
+    public TodoResponse markDone(Long id) {
+        Instant now = Instant.now(clock);
+        Todo updated = dataService.markDone(id, now);
+        return toResponse(updated);
+    }
+
+    public TodoResponse markNotDone(Long id) {
+        Instant now = Instant.now(clock);
+        Todo updated = dataService.markNotDone(id, now);
+        return toResponse(updated);
     }
 
     private TodoResponse toResponse(Todo todo) {

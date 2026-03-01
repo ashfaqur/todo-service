@@ -2,6 +2,7 @@ package com.demo.todo.controller;
 
 import com.demo.todo.dto.CreateTodoRequest;
 import com.demo.todo.dto.TodoResponse;
+import com.demo.todo.dto.UpdateDescriptionRequest;
 import com.demo.todo.dto.TodosListResponse;
 import com.demo.todo.service.TodoService;
 import jakarta.validation.Valid;
@@ -35,6 +36,25 @@ public class TodoRestController {
     @GetMapping
     public ResponseEntity<TodosListResponse> listTodos(@RequestParam(defaultValue = "false") boolean all) {
         TodosListResponse response = todoService.listTodos(all);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/description")
+    public ResponseEntity<TodoResponse> updateDescription(@PathVariable Long id,
+                                                          @Valid @RequestBody UpdateDescriptionRequest request) {
+        TodoResponse response = todoService.updateDescription(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/done")
+    public ResponseEntity<TodoResponse> markDone(@PathVariable Long id) {
+        TodoResponse response = todoService.markDone(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/not-done")
+    public ResponseEntity<TodoResponse> markNotDone(@PathVariable Long id) {
+        TodoResponse response = todoService.markNotDone(id);
         return ResponseEntity.ok(response);
     }
 }

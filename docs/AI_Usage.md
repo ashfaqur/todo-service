@@ -631,3 +631,258 @@ Controller tests validate contract only, not DB update mechanics.
 3. Error response structure remains unchanged.
 4. No pagination keys added to list response.
 5. Existing behaviors for POST and validation remain unchanged.
+
+
+Create a plan to add the following three rest endpoints
+
+Since these are writes, they will trigger the db update to check for past due,
+so we can reuse the logic we have already.
+
+
+1. Update description
+
+PATCH /todos/{id}/description
+
+{
+  "description": "Pay rent (landlord)"
+}
+
+-> 200 OK
+
+```json
+{
+  "id": 123,
+  "description": "Pay rent (landlord)",
+  "status": "NOT_DONE",
+  "createdAt": "2026-02-28T09:30:00Z",
+  "dueAt": "2026-03-01T10:00:00Z",
+  "doneAt": null
+}
+```
+-> 404 Not Found → id not found
+-> 400 Bad Request → blank/missing description
+-> 409 Conflict → todo is PAST_DUE
+
+2. Mark done
+
+POST /todos/{id}/done
+
+- If current status is NOT_DONE → set DONE, set doneAt = now
+- If current status is DONE → idempotent: keep DONE, keep existing doneAt
+
+-> 200 OK
+```json
+{
+  "id": 123,
+  "description": "Pay rent",
+  "status": "DONE",
+  "createdAt": "2026-02-28T09:30:00Z",
+  "dueAt": "2026-03-01T10:00:00Z",
+  "doneAt": "2026-02-28T09:45:12Z"
+}
+```
+-> 404 Not Found
+-> 409 Conflict → PAST_DUE
+
+3. Mark not done
+
+POST /todos/{id}/not-done
+
+- If current status is DONE → set NOT_DONE, set doneAt = null
+- If current status is NOT_DONE → idempotent:
+
+-> 200 OK
+
+```json
+{
+  "id": 123,
+  "description": "Pay rent",
+  "status": "NOT_DONE",
+  "createdAt": "2026-02-28T09:30:00Z",
+  "dueAt": "2026-03-01T10:00:00Z",
+  "doneAt": null
+}
+```
+-> 404 Not Found
+-> 409 Conflict → PAST_DUE
+
+## Plan: Add Write Endpoints for Description/Done/Not-Done with Past-Due Guard
+
+### Summary
+Implement three new write endpoints by reusing existing overdue-sync behavior (`update overdue before read`) so writes are blocked for `PAST_DUE` items. Keep `DataService` as repository + transaction boundary, keep deterministic time via injected `Clock`, and preserve existing API/error format.
+
+### Endpoints to Add
+1. `PATCH /todos/{id}/description`
+2. `POST /todos/{id}/done`
+3. `POST /todos/{id}/not-done`
+
+### Behavior Rules (Decision Complete)
+1. All three write endpoints must first run overdue sync for that ID:
+   - `markOverdueAsPastDueById(id, now)` with `now = Instant.now(clock)`.
+   - then fetch todo.
+2. If todo not found -> `404`.
+3. If todo status is `PAST_DUE` after sync -> `409 Conflict`.
+4. `PATCH /description`:
+   - request body must contain non-blank `description` (`400` on invalid).
+   - update description (trim input), keep other fields unchanged.
+5. `POST /done`:
+   - `NOT_DONE` -> set `DONE`, set `doneAt = now`.
+   - `DONE` -> idempotent, no change.
+   - `PAST_DUE` -> `409`.
+6. `POST /not-done`:
+   - `DONE` -> set `NOT_DONE`, set `doneAt = null`.
+   - `NOT_DONE` -> idempotent (ensure `doneAt` remains null).
+   - `PAST_DUE` -> `409`.
+
+---
+
+### New/Updated Interfaces and Types
+
+#### DTOs
+1. Add `UpdateDescriptionRequest` in `dto`:
+   - `@NotBlank String description`
+2. Reuse `TodoResponse` for all success responses (200).
+
+#### Exceptions
+1. Add `PastDueImmutableException` in `exception`.
+2. Map it in `GlobalExceptionHandler` to:
+   - HTTP `409`
+   - error code `"PAST_DUE_IMMUTABLE"`
+   - message `"Past due items cannot be modified."`
+   - keep current `{ error, message, path, timestamp }`.
+
+#### Service APIs
+1. `TodoService` add:
+   - `TodoResponse updateDescription(Long id, UpdateDescriptionRequest request)`
+   - `TodoResponse markDone(Long id)`
+   - `TodoResponse markNotDone(Long id)`
+
+2. `DataService` add transactional write methods:
+   - `Todo updateDescription(Long id, String description, Instant now)`
+   - `Todo markDone(Long id, Instant now)`
+   - `Todo markNotDone(Long id, Instant now)`
+   - These methods encapsulate:
+     - overdue sync by ID
+     - fetch by ID
+     - state checks
+     - mutation + save
+
+---
+
+### Repository Changes
+Reuse current:
+- `markOverdueAsPastDueById(Long id, Instant now)` (`@Modifying(clearAutomatically = true)`).
+
+No new SQL update query is required for these three write endpoints beyond existing overdue-by-id update.
+
+Optional helper read methods are not required; current `findById` + `save` is sufficient.
+
+---
+
+### Transaction and Layering Design
+
+#### DataService (transaction boundary)
+1. Each write method in `DataService` is `@Transactional`.
+2. Sequence inside each write method:
+   - `markOverdueAsPastDueById(id, now)`
+   - `findById(id)` or throw `TodoNotFoundException`
+   - if status `PAST_DUE` -> throw `PastDueImmutableException`
+   - apply endpoint-specific mutation
+   - `save(todo)` (or rely on dirty checking; choose explicit `save` for clarity/consistency)
+
+#### TodoService (business orchestration)
+1. Captures `now = Instant.now(clock)`.
+2. Delegates to `DataService` write method.
+3. Maps entity -> `TodoResponse`.
+4. Keeps no repository access and no transaction annotations.
+
+---
+
+### Controller Changes (`TodoRestController`)
+Add methods:
+1. `@PatchMapping("/{id}/description")`
+   - `ResponseEntity<TodoResponse> updateDescription(@PathVariable Long id, @Valid @RequestBody UpdateDescriptionRequest request)`
+2. `@PostMapping("/{id}/done")`
+   - `ResponseEntity<TodoResponse> markDone(@PathVariable Long id)`
+3. `@PostMapping("/{id}/not-done")`
+   - `ResponseEntity<TodoResponse> markNotDone(@PathVariable Long id)`
+
+All return `200 OK` with `TodoResponse`.
+
+---
+
+### Detailed Implementation Steps
+1. Add `UpdateDescriptionRequest` DTO.
+2. Add `PastDueImmutableException`.
+3. Extend `GlobalExceptionHandler` with `409` mapping for `PastDueImmutableException`.
+4. Extend `DataService` with three new transactional write methods.
+5. Extend `TodoService` with three public methods that pass `Instant.now(clock)`.
+6. Extend `TodoRestController` with three endpoint handlers.
+7. Keep existing create/get/list behavior intact.
+
+---
+
+### Test Plan
+
+#### 1) Service Unit Tests (`TodoServiceTest`)
+Mock `DataService`, fixed clock.
+Add tests:
+1. `updateDescription` delegates with fixed `now`, returns mapped response.
+2. `markDone` delegates with fixed `now`, returns mapped response.
+3. `markNotDone` delegates with fixed `now`, returns mapped response.
+
+#### 2) DataService Unit Tests (`DataServiceTest`)
+Mock `TodoRepository`.
+Add tests for each method:
+1. Overdue sync called first (`markOverdueAsPastDueById`).
+2. Not found -> `TodoNotFoundException`.
+3. `PAST_DUE` -> `PastDueImmutableException`.
+4. Description updated for patch.
+5. Done transition:
+   - `NOT_DONE` -> `DONE`, `doneAt=now`.
+   - `DONE` idempotent (doneAt unchanged).
+6. Not-done transition:
+   - `DONE` -> `NOT_DONE`, `doneAt=null`.
+   - `NOT_DONE` idempotent (`doneAt` null).
+
+#### 3) Controller Tests (`@WebMvcTest`)
+Mock `TodoService`.
+Add endpoint contract tests:
+1. `PATCH /description`:
+   - `200` success
+   - `400` blank/missing description
+   - `404` not found
+   - `409` past-due conflict
+2. `POST /done`:
+   - `200` success
+   - `404`
+   - `409`
+3. `POST /not-done`:
+   - `200` success
+   - `404`
+   - `409`
+
+#### 4) Integration Test (`@SpringBootTest` or `@DataJpaTest` + service)
+Add focused integration scenarios to verify DB sync + write behavior persists in H2:
+1. Overdue `NOT_DONE` then write call -> becomes `PAST_DUE` and write rejected with conflict path.
+2. `DONE` item remains `DONE` when overdue and can be toggled via `/not-done` (not auto-converted to `PAST_DUE`).
+3. Non-overdue `NOT_DONE` can be marked done and stores `doneAt`.
+
+---
+
+### Acceptance Criteria
+1. Three endpoints are available with exact paths and semantics above.
+2. All writes perform overdue-by-id sync before mutation.
+3. `PAST_DUE` items are immutable via these write endpoints (`409`).
+4. `DONE` is terminal regarding overdue sync (not auto-converted to `PAST_DUE`).
+5. Validation errors on patch description return `400`.
+6. Error payload format remains consistent with existing global handler.
+7. Tests pass with deterministic time and coverage for transitions/idempotency/conflicts.
+
+---
+
+### Assumptions / Defaults
+1. Conflict error code is `PAST_DUE_IMMUTABLE` (aligned with API design doc).
+2. Description is trimmed before persistence.
+3. Explicit `save` is used in `DataService` mutation methods for clarity.
+4. No pagination/scheduler/auth/extra endpoints are introduced.

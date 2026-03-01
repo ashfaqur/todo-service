@@ -9,8 +9,10 @@ import static org.mockito.Mockito.when;
 
 import com.demo.todo.dto.CreateTodoRequest;
 import com.demo.todo.dto.TodoResponse;
+import com.demo.todo.dto.UpdateDescriptionRequest;
 import com.demo.todo.dto.TodosListResponse;
 import com.demo.todo.exception.InvalidTodoInputException;
+import com.demo.todo.exception.OverdueReopenForbiddenException;
 import com.demo.todo.exception.TodoNotFoundException;
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
@@ -173,5 +175,77 @@ class TodoServiceTest {
         assertThat(response.meta().count()).isEqualTo(1);
         assertThat(response.items().getFirst().status()).isEqualTo(TodoStatus.PAST_DUE);
         verify(dataService).listWithOverdueSync(true, now);
+    }
+
+    @Test
+    void updateDescriptionDelegatesWithNowAndMapsResponse() {
+        Instant now = Instant.now(fixedClock);
+        UpdateDescriptionRequest request = new UpdateDescriptionRequest("Pay rent (landlord)");
+
+        Todo todo = new Todo();
+        todo.setId(7L);
+        todo.setDescription("Pay rent (landlord)");
+        todo.setStatus(TodoStatus.NOT_DONE);
+        todo.setCreatedAt(now.minusSeconds(60));
+        todo.setDueAt(now.plusSeconds(60));
+        todo.setDoneAt(null);
+
+        when(dataService.updateDescription(7L, "Pay rent (landlord)", now)).thenReturn(todo);
+
+        TodoResponse response = todoService.updateDescription(7L, request);
+
+        assertThat(response.id()).isEqualTo(7L);
+        assertThat(response.description()).isEqualTo("Pay rent (landlord)");
+        verify(dataService).updateDescription(7L, "Pay rent (landlord)", now);
+    }
+
+    @Test
+    void markDoneDelegatesWithNowAndMapsResponse() {
+        Instant now = Instant.now(fixedClock);
+        Todo todo = new Todo();
+        todo.setId(8L);
+        todo.setDescription("Pay rent");
+        todo.setStatus(TodoStatus.DONE);
+        todo.setCreatedAt(now.minusSeconds(60));
+        todo.setDueAt(now.plusSeconds(60));
+        todo.setDoneAt(now);
+
+        when(dataService.markDone(8L, now)).thenReturn(todo);
+
+        TodoResponse response = todoService.markDone(8L);
+
+        assertThat(response.status()).isEqualTo(TodoStatus.DONE);
+        assertThat(response.doneAt()).isEqualTo(now);
+        verify(dataService).markDone(8L, now);
+    }
+
+    @Test
+    void markNotDoneDelegatesWithNowAndMapsResponse() {
+        Instant now = Instant.now(fixedClock);
+        Todo todo = new Todo();
+        todo.setId(9L);
+        todo.setDescription("Pay rent");
+        todo.setStatus(TodoStatus.NOT_DONE);
+        todo.setCreatedAt(now.minusSeconds(60));
+        todo.setDueAt(now.plusSeconds(60));
+        todo.setDoneAt(null);
+
+        when(dataService.markNotDone(9L, now)).thenReturn(todo);
+
+        TodoResponse response = todoService.markNotDone(9L);
+
+        assertThat(response.status()).isEqualTo(TodoStatus.NOT_DONE);
+        assertThat(response.doneAt()).isNull();
+        verify(dataService).markNotDone(9L, now);
+    }
+
+    @Test
+    void markNotDonePropagatesOverdueReopenForbidden() {
+        Instant now = Instant.now(fixedClock);
+        when(dataService.markNotDone(10L, now)).thenThrow(new OverdueReopenForbiddenException());
+
+        assertThatThrownBy(() -> todoService.markNotDone(10L))
+                .isInstanceOf(OverdueReopenForbiddenException.class)
+                .hasMessage("Overdue done items cannot be reopened.");
     }
 }
