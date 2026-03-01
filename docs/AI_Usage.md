@@ -886,3 +886,240 @@ Add focused integration scenarios to verify DB sync + write behavior persists in
 2. Description is trimmed before persistence.
 3. Explicit `save` is used in `DataService` mutation methods for clarity.
 4. No pagination/scheduler/auth/extra endpoints are introduced.
+
+
+Create a detailed implementation plan (not full code) to adjust the existing Todo service write behavior with the following rule change:
+
+## New Rule
+
+If a todo is currently `DONE` and its `dueAt` is in the past (`dueAt < now`), the user must NOT be allowed to mark it as `NOT_DONE`.
+
+In other words:
+- DONE overdue → cannot be reopened.
+- This must return HTTP 409 Conflict.
+- Error code: `OVERDUE_REOPEN_FORBIDDEN`.
+
+We are intentionally keeping the design where:
+- `DONE` does NOT automatically transition to `PAST_DUE`.
+- Only `NOT_DONE` items transition to `PAST_DUE` during overdue sync.
+- `PAST_DUE` items remain immutable via REST API.
+
+## Required Behavioral Adjustments
+
+Modify only the `/not-done` flow:
+
+### POST /todos/{id}/not-done
+
+Existing behavior:
+- sync overdue by ID
+- fetch
+- if PAST_DUE → 409
+- if DONE → set NOT_DONE, doneAt=null
+- if NOT_DONE → idempotent
+
+New behavior:
+- sync overdue by ID
+- fetch
+- if not found → 404
+- if status == PAST_DUE → 409
+- if status == DONE AND dueAt < now → 409 (OVERDUE_REOPEN_FORBIDDEN)
+- if status == DONE AND dueAt >= now → allow transition to NOT_DONE
+- if status == NOT_DONE → idempotent
+
+All checks must use `Instant.now(clock)` captured once in TodoService and passed into DataService.
+
+---
+
+## Constraints
+
+1. Do NOT change the overdue sync SQL logic.
+2. Do NOT convert DONE overdue to PAST_DUE.
+3. Keep DataService as the only transactional layer.
+4. Keep controller thin.
+5. Use existing error response structure:
+   {
+     error,
+     message,
+     path,
+     timestamp
+   }
+6. Add a new exception class for this rule and map it in GlobalExceptionHandler to 409.
+7. Do not introduce new endpoints or change existing endpoint paths.
+
+---
+
+## Deliverable
+
+Write a structured step-by-step implementation plan including:
+
+- Required changes in DataService (transactional flow)
+- Required changes in TodoService (now handling)
+- Exception class addition
+- GlobalExceptionHandler update
+- Controller (if any change required)
+- Updated test plan:
+  - unit tests for DataService
+  - unit tests for TodoService
+  - controller contract tests
+  - integration test verifying overdue DONE cannot be reopened
+
+Do not provide full code. Only a clear implementation plan.
+
+---
+
+## Additional Notes
+
+Make sure the plan explicitly covers:
+
+- exact order of checks inside DataService
+- where `now` is captured
+- how idempotency is preserved
+- how this interacts with existing overdue sync logic
+- ensuring deterministic time in tests via injected Clock
+
+REview prompt
+
+You are reviewing a Spring Boot coding challenge repository.
+
+Your task is to:
+
+1. Read the coding challenge objective Objective.md.
+2. Analyze the current project implementation.
+3. Compare the implementation against the objective.
+4. Identify:
+   - What is fully implemented
+   - What partially meets requirements
+   - What is missing
+   - Any deviations or assumptions
+   - Any design inconsistencies
+5. Evaluate overall code quality, architecture, and test coverage.
+6. Produce a structured review and write it to a file named `REVIEW.md`.
+
+
+# Review Requirements
+
+## 1️⃣ Functional Requirements Review
+
+For each functional requirement:
+
+- State whether it is:
+  - ✅ Fully implemented
+  - ⚠️ Partially implemented
+  - ❌ Missing
+- Provide short reasoning.
+- Reference specific classes/files where relevant.
+
+Requirements include:
+- Add item
+- Update description
+- Mark done
+- Mark not done
+- Get not-done items (with all=true option)
+- Get single item
+- Automatic overdue transition
+- Forbid modifying past due items
+
+---
+
+## 2️⃣ Non-Functional Requirements Review
+
+Check:
+
+- Dockerization
+- H2 in-memory usage
+- Automatic tests present
+- No authentication implemented
+- README completeness:
+  - service description
+  - assumptions
+  - tech stack
+  - build instructions
+  - test instructions
+  - run instructions
+
+Mark each as:
+- Implemented
+-  Partial
+-  Missing
+
+---
+
+## 3️⃣ Design & Architecture Review
+
+Evaluate:
+
+- Layering (controller/service/repository separation)
+- Transaction boundaries
+- Time handling (Clock injection)
+- Status state machine consistency
+- Error handling consistency
+- DTO usage
+- Validation strategy
+- DB constraints vs domain logic alignment
+- Use of indices and query performance awareness
+- Overdue sync implementation correctness
+
+Highlight:
+- Strengths
+- Potential design improvements
+- Over-engineering risks
+- Missing edge-case handling
+
+---
+
+## 4️⃣ Testing Review
+
+Evaluate:
+
+- Unit tests (service, data layer)
+- Controller tests
+- Integration tests
+- Deterministic time usage
+- Edge case coverage
+- Idempotency tests
+- Conflict scenarios
+- Boundary condition tests
+
+Indicate coverage gaps if any.
+
+---
+
+## 5️⃣ Remaining Work
+
+Clearly list:
+
+- What is still missing to fully satisfy the objective
+- Any ambiguous interpretations that should be documented
+- Any recommended improvements before submission
+
+---
+
+## 6️⃣ Overall Assessment
+
+Provide:
+
+- Overall compliance score (0–10)
+- Code quality score (0–10)
+- Readiness for submission (Ready / Minor fixes / Needs work)
+- 3–5 bullet summary verdict
+
+---
+
+# Output Format
+
+Generate a clean, structured Markdown document and write it to:
+
+REVIEW.md
+
+Use clear sections:
+
+- Executive Summary
+- Functional Requirements
+- Non-Functional Requirements
+- Architecture & Design
+- Testing
+- Remaining Work
+- Final Assessment
+
+Do NOT modify any source code.
+Only generate REVIEW.md.
