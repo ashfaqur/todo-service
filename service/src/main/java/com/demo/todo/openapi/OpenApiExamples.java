@@ -1,5 +1,10 @@
 package com.demo.todo.openapi;
 
+/**
+ * Shared OpenAPI example payload constants.
+ * <p>
+ * Centralizes example JSON used in API documentation annotations.
+ */
 public final class OpenApiExamples {
 
     private OpenApiExamples() {

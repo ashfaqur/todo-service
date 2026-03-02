@@ -85,3 +85,10 @@ Representative prompt-response examples from `docs/AI.md` showing how AI was use
 **AI output summary:** Generated a reviewer-oriented checklist and output structure emphasizing requirement coverage, gaps, and readiness assessment.
 
 **Implementation influence:** Supported documentation quality and submission-readiness validation rather than feature development.
+
+9. OpenAPI Documentation Generation and Refactor
+**Prompt:** Add comprehensive OpenAPI documentation for all existing endpoints (metadata, request/response schemas, status codes, examples, and error responses) without changing runtime behavior, then refactor documentation bloat by moving annotations to an API interface and moving JSON examples into a dedicated constants class.
+
+**AI output summary:** Proposed a two-step approach: first annotate DTOs and endpoints with complete OpenAPI metadata and examples, then separate docs concerns into `TodoApi` and `OpenApiExamples` while keeping controller logic minimal.
+
+**Implementation influence:** Improved API discoverability in Swagger UI and produced a cleaner controller by separating documentation concerns from request-handling code.

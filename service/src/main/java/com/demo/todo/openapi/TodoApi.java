@@ -31,6 +31,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+/**
+ * OpenAPI documentation contract for todo endpoints.
+ * <p>
+ * Implemented by the REST controller to keep runtime handler code concise while
+ * keeping API documentation centralized.
+ */
 @Tag(name = "Todos", description = "Operations for creating, listing, and updating todo items")
 public interface TodoApi {
 

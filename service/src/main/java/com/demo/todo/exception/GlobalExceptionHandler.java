@@ -13,15 +13,33 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+/**
+ * Global exception mapper for REST-layer failures.
+ * <p>
+ * Converts domain and validation exceptions into the standardized
+ * {@link ErrorResponse} payload.
+ */
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     private final Clock clock;
 
+    /**
+     * Creates an exception handler with injected clock dependency.
+     *
+     * @param clock clock used to stamp error response timestamps
+     */
     public GlobalExceptionHandler(Clock clock) {
         this.clock = clock;
     }
 
+    /**
+     * Maps missing todo errors to HTTP 404.
+     *
+     * @param ex not-found exception
+     * @param request current HTTP request
+     * @return standardized error payload
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(TodoNotFoundException.class)
@@ -29,6 +47,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("TODO_NOT_FOUND", ex.getMessage(), request);
     }
 
+    /**
+     * Maps business input validation errors to HTTP 400.
+     *
+     * @param ex invalid-input exception
+     * @param request current HTTP request
+     * @return standardized error payload
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(InvalidTodoInputException.class)
@@ -36,6 +61,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("INVALID_REQUEST", ex.getMessage(), request);
     }
 
+    /**
+     * Maps immutable past-due state violations to HTTP 409.
+     *
+     * @param ex immutability exception
+     * @param request current HTTP request
+     * @return standardized error payload
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.CONFLICT)
     @ExceptionHandler(PastDueImmutableException.class)
@@ -43,6 +75,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("PAST_DUE_IMMUTABLE", ex.getMessage(), request);
     }
 
+    /**
+     * Maps overdue reopen rule violations to HTTP 409.
+     *
+     * @param ex reopen-forbidden exception
+     * @param request current HTTP request
+     * @return standardized error payload
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.CONFLICT)
     @ExceptionHandler(OverdueReopenForbiddenException.class)
@@ -51,6 +90,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("OVERDUE_REOPEN_FORBIDDEN", ex.getMessage(), request);
     }
 
+    /**
+     * Maps bean validation errors to HTTP 400.
+     *
+     * @param ex bean validation exception
+     * @param request current HTTP request
+     * @return standardized error payload with aggregated field messages
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -62,6 +108,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("INVALID_REQUEST", message, request);
     }
 
+    /**
+     * Maps malformed JSON or type coercion failures to HTTP 400.
+     *
+     * @param ex unreadable message exception
+     * @param request current HTTP request
+     * @return standardized error payload
+     */
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMessageNotReadableException.class)

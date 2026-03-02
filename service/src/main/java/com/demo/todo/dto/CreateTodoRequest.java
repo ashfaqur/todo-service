@@ -6,6 +6,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 
+/**
+ * DTO for todo creation requests at the API boundary.
+ *
+ * @param description todo description provided by the client
+ * @param dueAt due timestamp for the todo
+ */
 @Schema(name = "CreateTodoRequest", description = "Payload for creating a new todo item")
 public record CreateTodoRequest(
         @NotBlank(message = "description must not be blank")

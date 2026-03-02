@@ -4,6 +4,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/**
+ * DTO for description update requests.
+ *
+ * @param description new description value for an existing todo
+ */
 @Schema(name = "UpdateDescriptionRequest", description = "Payload for updating a todo description")
 public record UpdateDescriptionRequest(
         @NotBlank(message = "description must not be blank")

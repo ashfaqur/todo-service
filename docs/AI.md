@@ -1289,3 +1289,73 @@ Refactor the REST API documentation to reduce controller bloat by introducing an
 - New `TodoApi` interface containing OpenAPI docs
 - New `OpenApiExamples` class containing example JSON strings
 - No changes to runtime behavior
+
+
+Add proper JavaDoc documentation across the project, excluding the REST controller class which is already documented via the OpenAPI interface.
+
+## Scope
+
+Add JavaDoc to:
+
+1. All classes except:
+   - TodoRestController (since API documentation is provided via OpenAPI interface)
+
+2. All public constructors
+
+3. All public methods in:
+   - Service layer
+   - DataService layer
+   - Repository interfaces (if meaningful)
+   - DTOs (brief description only)
+   - Exception classes
+   - Configuration classes (e.g., Clock bean config)
+
+## Requirements
+
+### Class-Level JavaDoc
+For each class:
+- Provide a concise description of its responsibility.
+- Mention its role in the architecture (e.g., “service layer”, “transaction boundary”, “DTO for API responses”).
+- Avoid restating obvious code.
+- Keep it professional and concise (2–6 lines).
+
+### Constructor JavaDoc
+For public constructors:
+- Document purpose.
+- Document parameters with `@param`.
+- Explain injected dependencies where relevant (e.g., Clock, Repository).
+
+### Method JavaDoc
+For public methods:
+- Describe:
+  - What the method does
+  - Important behavior (e.g., overdue sync, immutability rules)
+  - Side effects (DB updates, state transitions)
+- Include:
+  - `@param`
+  - `@return` (if applicable)
+  - `@throws` for domain exceptions (e.g., TodoNotFoundException, PastDueImmutableException)
+
+Keep method docs concise but meaningful.
+
+### Constraints
+
+- Do NOT modify business logic.
+- Do NOT change method signatures.
+- Do NOT add JavaDoc to private methods.
+- Do NOT duplicate OpenAPI documentation in JavaDoc.
+- Keep wording consistent and professional.
+- Avoid excessive verbosity and keep text concise.
+
+### Style Guidelines
+
+- Use proper JavaDoc format (`/** ... */`).
+- Use full sentences.
+- Keep tone neutral and technical.
+- Avoid redundant phrases like “This method will…”.
+
+## Output
+
+Update relevant files by adding appropriate JavaDoc comments only.
+Do not refactor or restructure code.
+Ensure the project compiles after changes.

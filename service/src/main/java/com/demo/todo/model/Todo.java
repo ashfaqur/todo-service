@@ -10,6 +10,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * JPA entity representing persisted todo state.
+ * <p>
+ * Used by repository and service layers as the domain persistence model.
+ */
 @Entity
 @Table(name = "todos")
 public class Todo {

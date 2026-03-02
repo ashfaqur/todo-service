@@ -5,6 +5,11 @@ import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * OpenAPI metadata configuration for generated API documentation.
+ * <p>
+ * Defines top-level API information rendered in Swagger UI.
+ */
 @Configuration
 @OpenAPIDefinition(
         info = @Info(
