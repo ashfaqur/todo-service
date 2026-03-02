@@ -2,8 +2,9 @@ package com.demo.todo.controller;
 
 import com.demo.todo.dto.CreateTodoRequest;
 import com.demo.todo.dto.TodoResponse;
-import com.demo.todo.dto.UpdateDescriptionRequest;
 import com.demo.todo.dto.TodosListResponse;
+import com.demo.todo.dto.UpdateDescriptionRequest;
+import com.demo.todo.openapi.TodoApi;
 import com.demo.todo.service.TodoService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/todos")
-public class TodoRestController {
+public class TodoRestController implements TodoApi {
 
     private final TodoService todoService;
 
@@ -20,6 +21,7 @@ public class TodoRestController {
         this.todoService = todoService;
     }
 
+    @Override
     @PostMapping()
     public ResponseEntity<TodoResponse> createTodo(@Valid @RequestBody CreateTodoRequest request) {
         TodoResponse response = todoService.createTodo(request);
@@ -27,18 +29,21 @@ public class TodoRestController {
         return ResponseEntity.created(location).body(response);
     }
 
+    @Override
     @GetMapping("/{id}")
     public ResponseEntity<TodoResponse> getTodoById(@PathVariable Long id) {
         TodoResponse response = todoService.getTodoById(id);
         return ResponseEntity.ok(response);
     }
 
+    @Override
     @GetMapping
     public ResponseEntity<TodosListResponse> listTodos(@RequestParam(defaultValue = "false") boolean all) {
         TodosListResponse response = todoService.listTodos(all);
         return ResponseEntity.ok(response);
     }
 
+    @Override
     @PatchMapping("/{id}/description")
     public ResponseEntity<TodoResponse> updateDescription(@PathVariable Long id,
                                                           @Valid @RequestBody UpdateDescriptionRequest request) {
@@ -46,12 +51,14 @@ public class TodoRestController {
         return ResponseEntity.ok(response);
     }
 
+    @Override
     @PostMapping("/{id}/done")
     public ResponseEntity<TodoResponse> markDone(@PathVariable Long id) {
         TodoResponse response = todoService.markDone(id);
         return ResponseEntity.ok(response);
     }
 
+    @Override
     @PostMapping("/{id}/not-done")
     public ResponseEntity<TodoResponse> markNotDone(@PathVariable Long id) {
         TodoResponse response = todoService.markNotDone(id);

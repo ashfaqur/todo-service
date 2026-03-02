@@ -1163,3 +1163,129 @@ Output:
 - Rewrite and polish the full `development.md` file.
 - Maintain Markdown formatting.
 - Keep the document compact and readable.
+
+
+Enhance this Spring Boot project by adding proper OpenAPI (Swagger) documentation.
+
+Goal:
+Add comprehensive OpenAPI documentation for all existing REST endpoints, including:
+- API metadata (title, description, version)
+- Endpoint summaries and descriptions
+- Request/response schemas
+- HTTP response codes
+- Example request/response bodies
+- Error response documentation
+- Configuration for accessing Swagger UI
+
+Tasks:
+
+1. Add OpenAPI Dependency
+   - Use springdoc-openapi (latest stable version compatible with Spring Boot 3).
+   - Configure Swagger UI endpoint.
+   - Ensure the app runs without breaking existing functionality.
+
+2. Add Global API Metadata
+   - Define:
+     - title
+     - description
+     - version
+     - contact (optional)
+   - Use @OpenAPIDefinition or configuration bean.
+   - Provide a short but professional API description.
+
+3. Document All Endpoints
+   For each controller method:
+   - Add @Operation with:
+     - summary
+     - detailed description
+   - Add @ApiResponses including:
+     - 200 / 201 success
+     - 400 validation errors
+     - 404 not found
+     - 409 conflict (where applicable)
+   - Use @Parameter where helpful.
+   - Document request body with @RequestBody and examples.
+   - Document response schemas properly.
+
+4. Add Schema Documentation
+   - Annotate DTOs with @Schema:
+     - field descriptions
+     - examples
+     - required fields
+   - Ensure enums (TodoStatus) are properly documented.
+   - Ensure error response model is documented clearly.
+
+5. Add Usage Examples
+   For each endpoint include:
+   - Example request JSON
+   - Example success response JSON
+   - Example error response JSON (where applicable)
+
+6. Configuration
+   - Ensure Swagger UI is accessible at:
+     /swagger-ui.html or /swagger-ui/index.html
+   - Ensure OpenAPI JSON is accessible at:
+     /v3/api-docs
+   - Do not break existing tests.
+
+7. Constraints
+   - Do not modify business logic.
+   - Do not refactor unrelated code.
+   - Keep documentation concise and professional.
+   - Avoid redundant descriptions.
+   - Keep consistent terminology across endpoints.
+
+Output:
+- Modify controller and DTO files as needed.
+- Add any required OpenAPI configuration classes.
+- Ensure project compiles.
+- Provide clean, maintainable documentation annotations.
+
+
+Refactor the REST API documentation to reduce controller bloat by introducing an OpenAPI-annotated interface (Option D) and moving large example JSON strings into a dedicated constants class (Option B). Do not change runtime behavior.
+
+## Current State
+- `TodoRestController` contains both endpoint logic and extensive OpenAPI annotations + large inline JSON example strings.
+- Endpoints and behavior must remain exactly the same.
+
+## Goals
+1. Make `TodoRestController` minimal and readable (routing + delegation only).
+2. Move all OpenAPI annotations (@Operation, @ApiResponses, @Parameter, etc.) onto a new interface, e.g. `TodoApi`.
+3. Move all JSON example String constants into a dedicated class, e.g. `com.demo.todo.openapi.OpenApiExamples`.
+4. Keep Swagger/OpenAPI output equivalent in meaning:
+   - Same title/tag grouping where applicable
+   - Same response codes documented (200/201/400/404/409)
+   - Same schemas (TodoResponse, TodosListResponse, ErrorResponse, etc.)
+   - Same example payloads (just referenced from `OpenApiExamples`)
+
+## Required Refactor Steps
+1. Create package `com.demo.todo.openapi` (or similar).
+2. Create `OpenApiExamples` class:
+   - Move all `private static final String ... = """..."""` JSON examples from `TodoRestController` into this class.
+   - Make them `public static final String ...`.
+3. Create `TodoApi` interface (suggest package `com.demo.todo.controller.api` or `com.demo.todo.openapi`):
+   - Copy OpenAPI annotations from the controller methods onto interface methods.
+   - Interface methods must match existing endpoint signatures and return types.
+   - Use `OpenApiExamples.*` for `@ExampleObject(value=...)`.
+4. Update `TodoRestController`:
+   - Keep `@RestController` and `@RequestMapping("/todos")`.
+   - Implement `TodoApi`.
+   - Keep Spring MVC annotations needed for runtime mapping (`@PostMapping`, `@GetMapping`, `@PatchMapping`, etc.) either:
+     - on the interface (preferred if it works reliably in this project), OR
+     - on the controller methods (acceptable if interface-only mapping causes issues).
+   - Remove all OpenAPI annotations from the controller.
+   - Keep the same method bodies and delegation to `TodoService`.
+5. Ensure compilation and existing tests still pass.
+6. Do not refactor business logic, services, repositories, or error handling.
+
+## Notes / Constraints
+- Do not change any endpoint paths, HTTP methods, request/response DTOs, or status codes.
+- Do not change exception behavior or error response shape.
+- Keep Tag grouping (e.g., `@Tag(name="Todos", ...)`) at the interface level if possible.
+- Keep annotations concise; avoid duplication if you can reuse the same example constants.
+
+## Deliverable
+- Updated `TodoRestController` (clean + minimal)
+- New `TodoApi` interface containing OpenAPI docs
+- New `OpenApiExamples` class containing example JSON strings
+- No changes to runtime behavior

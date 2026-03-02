@@ -32,6 +32,12 @@ Each todo contains:
 - `dueAt`
 - `doneAt`
 
+Service runs by default on: http://localhost:8080
+
+Swagger UI: http://localhost:8080/swagger-ui/index.html
+
+OpenAPI JSON: http://localhost:8080/v3/api-docs
+
 ## API Endpoints
 
 Base path: `/todos`
@@ -64,6 +70,19 @@ Immutability Rules
 - `PAST_DUE` items are immutable. Any attempt to modify them returns `409 Conflict`.
 - Reopening a `DONE` todo (`DONE → NOT_DONE`) is rejected with `409 Conflict` if the item is already past its `dueAt` timestamp.
 
+Identifier Strategy
+- Todo IDs use a database-generated auto-increment `BIGINT` primary key.
+- This simplifies indexing and ensures efficient numeric lookups.
+- The service is assumed to run against a single database instance.
+- In distributed or horizontally scaled environments, a UUID-based strategy could be considered.
+
+Timestamps
+- All timestamps are represented in ISO-8601 format using UTC (e.g., `2026-03-01T10:00:00Z`).
+- The service uses `Instant` internally for time calculations.
+- The current time (`now`) is derived from an injected `Clock` to ensure deterministic and testable behavior.
+- Overdue transitions are evaluated using application time (`dueAt < now`).
+- Clients are expected to provide `dueAt` values in UTC.
+
 Out of Scope
 - Authentication and authorization are not implemented.
 - A scheduler for background state transitions is not implemented.
@@ -71,7 +90,7 @@ Out of Scope
 - Pagination for listing todos is not implemented.
   - The todo list is assumed to be small enough to be manageable in memory.
 
-## Run service with Docker (Recommended)
+## Run service with Docker
 
 From repository root:
 
