@@ -77,14 +77,9 @@ Immutability Rules
 Identifier Strategy
 - Todo IDs use a database-generated auto-increment `BIGINT` primary key.
 - This simplifies indexing and ensures efficient numeric lookups.
-- The service is assumed to run against a single database instance.
-- In distributed or horizontally scaled environments, a UUID-based strategy could be considered.
 
 Timestamps
 - All timestamps are represented in ISO-8601 format using UTC (e.g., `2026-03-01T10:00:00Z`).
-- The service uses `Instant` internally for time calculations.
-- The current time (`now`) is derived from an injected `Clock` to ensure deterministic and testable behavior.
-- Overdue transitions are evaluated using application time (`dueAt < now`).
 - Clients are expected to provide `dueAt` values in UTC.
 
 Out of Scope
@@ -95,6 +90,9 @@ Out of Scope
   - Concurrent modifications currently follow a last-write-wins model.
   - In a production environment, a @Version field (optimistic locking) could be introduced to detect and reject conflicting updates with a 409 Conflict response.
 - In multi-instance deployments, each instance may run the scheduler unless coordinated externally.
+- No UUID for identifier
+  - The service is assumed to run against a single database instance.
+  - In distributed or horizontally scaled environments, a UUID-based strategy could be considered.
 
 ## Run service with Docker
 
