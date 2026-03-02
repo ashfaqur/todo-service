@@ -140,7 +140,6 @@ Service runs on `http://localhost:8080`.
 
 ## Useful endpoints:
 - Health: `http://localhost:8080/actuator/health`
-- H2 Console: `http://localhost:8080/h2`
 - OpenAPI UI: `http://localhost:8080/swagger-ui.html`
 
 ## Documentation:
