@@ -36,12 +36,14 @@ Each todo contains:
 
 Base path: `/todos`
 
-- `POST /todos`
-- `PATCH /todos/{id}/description`
-- `POST /todos/{id}/done`
-- `POST /todos/{id}/not-done`
-- `GET /todos/{id}`
-- `GET /todos?all=false|true`
+| Method | Endpoint | Params | Description |
+| --- | --- | --- | --- |
+| `POST` | `/todos` | body: `description`, `dueAt` | Create a new todo item. |
+| `PATCH` | `/todos/{id}/description` | path: `id`; body: `description` | Update the description of an existing todo. |
+| `POST` | `/todos/{id}/done` | path: `id` | Mark a todo as done (`NOT_DONE -> DONE`, idempotent for `DONE`). |
+| `POST` | `/todos/{id}/not-done` | path: `id` | Mark a todo as not done, with overdue reopen restrictions. |
+| `GET` | `/todos/{id}` | path: `id` | Get a single todo by ID. |
+| `GET` | `/todos` | query: `all` (`false` default) | List todos (`all=false` for not-done only, `all=true` for all statuses). |
 
 
 ## API Assumptions and Behavior
@@ -115,5 +117,3 @@ Service runs on `http://localhost:8080`.
 - Health: `http://localhost:8080/actuator/health`
 - H2 Console: `http://localhost:8080/h2`
 - OpenAPI UI: `http://localhost:8080/swagger-ui.html`
-
-
