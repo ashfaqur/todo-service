@@ -138,10 +138,6 @@ Run the service
 
 Service runs on `http://localhost:8080`.
 
-## Useful endpoints:
-- Health: `http://localhost:8080/actuator/health`
-- OpenAPI UI: `http://localhost:8080/swagger-ui.html`
-
 ## Documentation:
 - [Development process and milestones](docs/Development.md)
 - [Architecture Overview](docs/Architecture.md)
