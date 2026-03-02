@@ -28,7 +28,7 @@ Behavior:
 - status = NOT_DONE 
   but to set PAST_DUE immediately if dueAt < now (document it).
 
-1. Past due rule (automatic)
+2. Past due rule (automatic)
 - If status == NOT_DONE and now > dueAt -> becomes PAST_DUE.
 
 If an item is DONE, do you ever make it PAST_DUE later? Most interpretations: no (done is terminal). Document.
