@@ -26,61 +26,61 @@ AI was also a great tool for learning new ideas and concepts. For this purpose, 
 
 My thinking is to use AI like a pair-programming buddy and guide it through the implementation.
 
-# Example AI Prompts
+## Example AI Prompts
 
 Representative prompt-response examples from `docs/AI.md` showing how AI was used during planning, refinement, and review.
 
-## 1. Initial Endpoint Scope and Layering
-**Prompt (cleaned):** Create an implementation plan for only `POST /todos` and `GET /todos/{id}` using a layered package structure (`controller`, `service`, `repository`, `model`, `dto`, `exception`) and proper error handling.
+1. Initial Endpoint Scope and Layering
+**Prompt:** Create an implementation plan for only `POST /todos` and `GET /todos/{id}` using a layered package structure (`controller`, `service`, `repository`, `model`, `dto`, `exception`) and proper error handling.
 
 **AI output summary:** Proposed a phased implementation plan with explicit classes (controller, service, entity, DTOs, exceptions, global handler), scoped to only the two endpoints.
 
 **Implementation influence:** Helped define the initial project structure and prevented scope creep during the first coding phase.
 
-## 2. Deterministic Time Handling
-**Prompt (cleaned):** Refine the plan so `dueAt >= now` validation is deterministic in tests by injecting `Clock` and using `Instant.now(clock)`.
+2. Deterministic Time Handling
+**Prompt:** Refine the plan so `dueAt >= now` validation is deterministic in tests by injecting `Clock` and using `Instant.now(clock)`.
 
 **AI output summary:** Recommended capturing `now` once per request path, injecting `Clock` into service and exception handling, and aligning validation with DB constraints.
 
 **Implementation influence:** Drove consistent time handling in business logic and tests, reducing flaky time-based behavior.
 
-## 3. Contract-First Error Handling
-**Prompt (cleaned):** Ensure responses and global error payloads match the API design, including validation and not-found behavior.
+3. Contract-First Error Handling
+**Prompt:** Ensure responses and global error payloads match the API design, including validation and not-found behavior.
 
 **AI output summary:** Defined a unified error model (`error`, `message`, `path`, `timestamp`) and exception-to-HTTP mappings for common failure paths.
 
 **Implementation influence:** Improved consistency of API failure responses across endpoints and simplified controller code.
 
-## 4. Overdue Sync on Reads and List Endpoint Design
-**Prompt (cleaned):** Add `GET /todos` with `all=true|false` and enforce overdue transitions by syncing `NOT_DONE -> PAST_DUE` before reads.
+4. Overdue Sync on Reads and List Endpoint Design
+**Prompt:** Add `GET /todos` with `all=true|false` and enforce overdue transitions by syncing `NOT_DONE -> PAST_DUE` before reads.
 
 **AI output summary:** Proposed update-before-fetch flow for single and list reads, list response DTOs with metadata, and clear in/out-of-scope boundaries.
 
 **Implementation influence:** Guided the final read behavior and introduced consistent list response structure.
 
-## 5. Repository Update Strategy and Ordering
-**Prompt (cleaned):** Include DB-level overdue updates with transaction-safe patterns, `@Modifying(clearAutomatically = true)`, and default list ordering.
+5. Repository Update Strategy and Ordering
+**Prompt:** Include DB-level overdue updates with transaction-safe patterns, `@Modifying(clearAutomatically = true)`, and default list ordering.
 
 **AI output summary:** Recommended parameterized SQL update methods, persistence-context refresh safeguards, and sorted repository queries by `createdAt`.
 
 **Implementation influence:** Informed repository method design and reduced risk of stale reads after bulk updates.
 
-## 6. Write Endpoint State-Machine Expansion
-**Prompt (cleaned):** Plan `PATCH /todos/{id}/description`, `POST /todos/{id}/done`, and `POST /todos/{id}/not-done`, reusing overdue sync and enforcing `PAST_DUE` immutability.
+6. Write Endpoint State-Machine Expansion
+**Prompt:** Plan `PATCH /todos/{id}/description`, `POST /todos/{id}/done`, and `POST /todos/{id}/not-done`, reusing overdue sync and enforcing `PAST_DUE` immutability.
 
 **AI output summary:** Outlined endpoint semantics, idempotency behavior, transactional flow in `DataService`, new DTO/exception requirements, and test coverage additions.
 
 **Implementation influence:** Shaped the write-side state transition logic and ensured conflict handling remained explicit.
 
-## 7. Rule Change: Block Reopening Overdue DONE Items
-**Prompt (cleaned):** Adjust only `/not-done` so `DONE` items with `dueAt < now` return `409` with `OVERDUE_REOPEN_FORBIDDEN`, without changing overdue sync SQL.
+7. Rule Change: Block Reopening Overdue DONE Items
+**Prompt:** Adjust only `/not-done` so `DONE` items with `dueAt < now` return `409` with `OVERDUE_REOPEN_FORBIDDEN`, without changing overdue sync SQL.
 
 **AI output summary:** Produced a targeted change plan covering check order, new exception mapping, and deterministic tests for the new transition rule.
 
 **Implementation influence:** Enabled a focused state-machine refinement without broad architectural changes.
 
-## 8. Structured Implementation Review Prompt
-**Prompt (cleaned):** Review the repository against the challenge objective and generate a structured `REVIEW.md` covering functional, non-functional, architecture, and testing status.
+8. Structured Implementation Review Prompt
+**Prompt:** Review the repository against the challenge objective and generate a structured `REVIEW.md` covering functional, non-functional, architecture, and testing status.
 
 **AI output summary:** Generated a reviewer-oriented checklist and output structure emphasizing requirement coverage, gaps, and readiness assessment.
 
