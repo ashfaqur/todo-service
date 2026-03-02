@@ -1,5 +1,6 @@
 package com.demo.todo.controller;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -14,6 +15,7 @@ import com.demo.todo.dto.UpdateDescriptionRequest;
 import com.demo.todo.dto.TodosListMeta;
 import com.demo.todo.dto.TodosListResponse;
 import com.demo.todo.exception.GlobalExceptionHandler;
+import com.demo.todo.exception.InvalidTodoInputException;
 import com.demo.todo.exception.OverdueReopenForbiddenException;
 import com.demo.todo.exception.PastDueImmutableException;
 import com.demo.todo.exception.TodoNotFoundException;
@@ -72,6 +74,25 @@ class TodoRestControllerTest {
     }
 
     @Test
+    void getTodoByIdReturns200() throws Exception {
+        TodoResponse response = new TodoResponse(
+                2L,
+                "Read book",
+                TodoStatus.NOT_DONE,
+                Instant.parse("2026-03-01T09:00:00Z"),
+                Instant.parse("2026-03-01T11:00:00Z"),
+                null
+        );
+        when(todoService.getTodoById(2L)).thenReturn(response);
+
+        mockMvc.perform(get("/todos/2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2))
+                .andExpect(jsonPath("$.description").value("Read book"))
+                .andExpect(jsonPath("$.status").value("NOT_DONE"));
+    }
+
+    @Test
     void createTodoReturns400ForInvalidInput() throws Exception {
         mockMvc.perform(post("/todos")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -82,6 +103,39 @@ class TodoRestControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.path").value("/todos"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
+    }
+
+    @Test
+    void createTodoReturns400WhenDueAtMissing() throws Exception {
+        mockMvc.perform(post("/todos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "description": "Pay rent"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message", containsString("dueAt")))
+                .andExpect(jsonPath("$.path").value("/todos"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
+    }
+
+    @Test
+    void createTodoReturns400WhenDueAtMalformed() throws Exception {
+        mockMvc.perform(post("/todos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "description": "Pay rent",
+                                  "dueAt": "not-a-date"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Malformed request body"))
                 .andExpect(jsonPath("$.path").value("/todos"))
                 .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
     }
@@ -99,6 +153,25 @@ class TodoRestControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
                 .andExpect(jsonPath("$.message").value("description: description must be at most 1000 characters"))
+                .andExpect(jsonPath("$.path").value("/todos"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
+    }
+
+    @Test
+    void createTodoReturns400WhenDueAtBeforeNowBusinessRule() throws Exception {
+        when(todoService.createTodo(any())).thenThrow(new InvalidTodoInputException("dueAt must not be before current time"));
+
+        mockMvc.perform(post("/todos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "description": "Late task",
+                                  "dueAt": "2026-03-01T09:59:59Z"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("dueAt must not be before current time"))
                 .andExpect(jsonPath("$.path").value("/todos"))
                 .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
     }
@@ -153,6 +226,12 @@ class TodoRestControllerTest {
                 .andExpect(jsonPath("$.items[0].status").value("PAST_DUE"))
                 .andExpect(jsonPath("$.meta.count").value(1))
                 .andExpect(jsonPath("$.meta.all").value(true));
+    }
+
+    @Test
+    void listTodosReturns400ForInvalidAllParam() throws Exception {
+        mockMvc.perform(get("/todos").param("all", "invalid"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

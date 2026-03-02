@@ -153,6 +153,7 @@ class DataServiceTest {
 
         assertThatThrownBy(() -> dataService.updateDescription(4L, "X", now))
                 .isInstanceOf(PastDueImmutableException.class);
+        verify(todoRepository, never()).save(todo);
     }
 
     @Test
@@ -186,6 +187,7 @@ class DataServiceTest {
 
         assertThat(result.getStatus()).isEqualTo(TodoStatus.DONE);
         assertThat(result.getDoneAt()).isEqualTo(doneAt);
+        verify(todoRepository, never()).save(todo);
     }
 
     @Test
@@ -198,6 +200,15 @@ class DataServiceTest {
 
         assertThatThrownBy(() -> dataService.markDone(7L, now))
                 .isInstanceOf(PastDueImmutableException.class);
+    }
+
+    @Test
+    void markDoneThrowsNotFoundWhenMissing() {
+        Instant now = Instant.parse("2026-03-01T10:00:00Z");
+        when(todoRepository.findById(50L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> dataService.markDone(50L, now))
+                .isInstanceOf(TodoNotFoundException.class);
     }
 
     @Test
@@ -246,6 +257,15 @@ class DataServiceTest {
 
         assertThatThrownBy(() -> dataService.markNotDone(10L, now))
                 .isInstanceOf(PastDueImmutableException.class);
+    }
+
+    @Test
+    void markNotDoneThrowsNotFoundWhenMissing() {
+        Instant now = Instant.parse("2026-03-01T10:00:00Z");
+        when(todoRepository.findById(51L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> dataService.markNotDone(51L, now))
+                .isInstanceOf(TodoNotFoundException.class);
     }
 
     @Test

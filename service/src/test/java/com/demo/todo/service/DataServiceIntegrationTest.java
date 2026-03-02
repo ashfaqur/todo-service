@@ -9,6 +9,7 @@ import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
 import com.demo.todo.repository.TodoRepository;
 import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,5 +98,82 @@ class DataServiceIntegrationTest {
 
         assertThat(updated.getStatus()).isEqualTo(TodoStatus.DONE);
         assertThat(updated.getDoneAt()).isEqualTo(now);
+    }
+
+    @Test
+    void getByIdWithOverdueSyncTransitionsOverdueNotDone() {
+        Instant now = Instant.parse("2026-03-01T10:00:00Z");
+        Todo todo = new Todo();
+        todo.setDescription("Task");
+        todo.setStatus(TodoStatus.NOT_DONE);
+        todo.setCreatedAt(now.minusSeconds(100));
+        todo.setDueAt(now.minusSeconds(1));
+        todo.setDoneAt(null);
+        Todo saved = todoRepository.save(todo);
+
+        Todo result = dataService.getByIdWithOverdueSync(saved.getId(), now).orElseThrow();
+
+        assertThat(result.getStatus()).isEqualTo(TodoStatus.PAST_DUE);
+        Todo refreshed = todoRepository.findById(saved.getId()).orElseThrow();
+        assertThat(refreshed.getStatus()).isEqualTo(TodoStatus.PAST_DUE);
+    }
+
+    @Test
+    void listWithOverdueSyncFalseExcludesTransitionedPastDue() {
+        Instant now = Instant.parse("2026-03-01T10:00:00Z");
+
+        Todo overdueNotDone = new Todo();
+        overdueNotDone.setDescription("Overdue");
+        overdueNotDone.setStatus(TodoStatus.NOT_DONE);
+        overdueNotDone.setCreatedAt(now.minusSeconds(100));
+        overdueNotDone.setDueAt(now.minusSeconds(1));
+        overdueNotDone.setDoneAt(null);
+        todoRepository.save(overdueNotDone);
+
+        Todo futureNotDone = new Todo();
+        futureNotDone.setDescription("Future");
+        futureNotDone.setStatus(TodoStatus.NOT_DONE);
+        futureNotDone.setCreatedAt(now.minusSeconds(90));
+        futureNotDone.setDueAt(now.plusSeconds(60));
+        futureNotDone.setDoneAt(null);
+        Todo futureSaved = todoRepository.save(futureNotDone);
+
+        List<Todo> result = dataService.listWithOverdueSync(false, now);
+
+        assertThat(result).extracting(Todo::getId).containsExactly(futureSaved.getId());
+        assertThat(todoRepository.findAllByOrderByCreatedAtAsc())
+                .filteredOn(t -> "Overdue".equals(t.getDescription()))
+                .first()
+                .extracting(Todo::getStatus)
+                .isEqualTo(TodoStatus.PAST_DUE);
+    }
+
+    @Test
+    void listWithOverdueSyncTrueIncludesPastDueAfterSync() {
+        Instant now = Instant.parse("2026-03-01T10:00:00Z");
+
+        Todo overdueNotDone = new Todo();
+        overdueNotDone.setDescription("Overdue");
+        overdueNotDone.setStatus(TodoStatus.NOT_DONE);
+        overdueNotDone.setCreatedAt(now.minusSeconds(100));
+        overdueNotDone.setDueAt(now.minusSeconds(1));
+        overdueNotDone.setDoneAt(null);
+        Todo overdueSaved = todoRepository.save(overdueNotDone);
+
+        Todo done = new Todo();
+        done.setDescription("Done");
+        done.setStatus(TodoStatus.DONE);
+        done.setCreatedAt(now.minusSeconds(90));
+        done.setDueAt(now.minusSeconds(30));
+        done.setDoneAt(now.minusSeconds(60));
+        Todo doneSaved = todoRepository.save(done);
+
+        List<Todo> result = dataService.listWithOverdueSync(true, now);
+
+        assertThat(result).extracting(Todo::getId).contains(overdueSaved.getId(), doneSaved.getId());
+        assertThat(result).filteredOn(t -> t.getId().equals(overdueSaved.getId()))
+                .first()
+                .extracting(Todo::getStatus)
+                .isEqualTo(TodoStatus.PAST_DUE);
     }
 }

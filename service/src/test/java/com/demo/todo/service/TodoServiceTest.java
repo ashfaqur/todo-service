@@ -13,6 +13,7 @@ import com.demo.todo.dto.UpdateDescriptionRequest;
 import com.demo.todo.dto.TodosListResponse;
 import com.demo.todo.exception.InvalidTodoInputException;
 import com.demo.todo.exception.OverdueReopenForbiddenException;
+import com.demo.todo.exception.PastDueImmutableException;
 import com.demo.todo.exception.TodoNotFoundException;
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -89,6 +91,28 @@ class TodoServiceTest {
         assertThat(response.createdAt()).isEqualTo(now);
         assertThat(response.dueAt()).isEqualTo(dueAt);
         assertThat(response.status()).isEqualTo(TodoStatus.NOT_DONE);
+    }
+
+    @Test
+    void createTodoTrimsDescriptionBeforeSave() {
+        Instant now = Instant.now(fixedClock);
+        CreateTodoRequest request = new CreateTodoRequest("  Pay rent  ", now.plusSeconds(60));
+
+        Todo savedTodo = new Todo();
+        savedTodo.setId(12L);
+        savedTodo.setDescription("Pay rent");
+        savedTodo.setStatus(TodoStatus.NOT_DONE);
+        savedTodo.setCreatedAt(now);
+        savedTodo.setDueAt(now.plusSeconds(60));
+        savedTodo.setDoneAt(null);
+
+        when(dataService.save(any(Todo.class))).thenReturn(savedTodo);
+
+        todoService.createTodo(request);
+
+        ArgumentCaptor<Todo> captor = ArgumentCaptor.forClass(Todo.class);
+        verify(dataService).save(captor.capture());
+        assertThat(captor.getValue().getDescription()).isEqualTo("Pay rent");
     }
 
     @Test
@@ -200,6 +224,26 @@ class TodoServiceTest {
     }
 
     @Test
+    void updateDescriptionTrimsDescriptionBeforeDelegate() {
+        Instant now = Instant.now(fixedClock);
+        UpdateDescriptionRequest request = new UpdateDescriptionRequest("  Pay rent (landlord)  ");
+
+        Todo todo = new Todo();
+        todo.setId(7L);
+        todo.setDescription("Pay rent (landlord)");
+        todo.setStatus(TodoStatus.NOT_DONE);
+        todo.setCreatedAt(now.minusSeconds(60));
+        todo.setDueAt(now.plusSeconds(60));
+        todo.setDoneAt(null);
+
+        when(dataService.updateDescription(7L, "Pay rent (landlord)", now)).thenReturn(todo);
+
+        todoService.updateDescription(7L, request);
+
+        verify(dataService).updateDescription(7L, "Pay rent (landlord)", now);
+    }
+
+    @Test
     void markDoneDelegatesWithNowAndMapsResponse() {
         Instant now = Instant.now(fixedClock);
         Todo todo = new Todo();
@@ -217,6 +261,26 @@ class TodoServiceTest {
         assertThat(response.status()).isEqualTo(TodoStatus.DONE);
         assertThat(response.doneAt()).isEqualTo(now);
         verify(dataService).markDone(8L, now);
+    }
+
+    @Test
+    void markDonePropagatesTodoNotFound() {
+        Instant now = Instant.now(fixedClock);
+        when(dataService.markDone(8L, now)).thenThrow(new TodoNotFoundException(8L));
+
+        assertThatThrownBy(() -> todoService.markDone(8L))
+                .isInstanceOf(TodoNotFoundException.class)
+                .hasMessage("Todo not found for id: 8");
+    }
+
+    @Test
+    void markDonePropagatesPastDueImmutable() {
+        Instant now = Instant.now(fixedClock);
+        when(dataService.markDone(8L, now)).thenThrow(new PastDueImmutableException());
+
+        assertThatThrownBy(() -> todoService.markDone(8L))
+                .isInstanceOf(PastDueImmutableException.class)
+                .hasMessage("Past due items cannot be modified.");
     }
 
     @Test
@@ -247,5 +311,17 @@ class TodoServiceTest {
         assertThatThrownBy(() -> todoService.markNotDone(10L))
                 .isInstanceOf(OverdueReopenForbiddenException.class)
                 .hasMessage("Overdue done items cannot be reopened.");
+    }
+
+    @Test
+    void updateDescriptionPropagatesPastDueImmutable() {
+        Instant now = Instant.now(fixedClock);
+        UpdateDescriptionRequest request = new UpdateDescriptionRequest("Pay rent (landlord)");
+        when(dataService.updateDescription(7L, "Pay rent (landlord)", now))
+                .thenThrow(new PastDueImmutableException());
+
+        assertThatThrownBy(() -> todoService.updateDescription(7L, request))
+                .isInstanceOf(PastDueImmutableException.class)
+                .hasMessage("Past due items cannot be modified.");
     }
 }
