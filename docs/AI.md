@@ -998,14 +998,14 @@ Your task is to:
 
 # Review Requirements
 
-## 1️⃣ Functional Requirements Review
+## Functional Requirements Review
 
 For each functional requirement:
 
 - State whether it is:
-  - ✅ Fully implemented
-  - ⚠️ Partially implemented
-  - ❌ Missing
+  - Fully implemented
+  - Partially implemented
+  - Missing
 - Provide short reasoning.
 - Reference specific classes/files where relevant.
 
@@ -1021,7 +1021,7 @@ Requirements include:
 
 ---
 
-## 2️⃣ Non-Functional Requirements Review
+## Non-Functional Requirements Review
 
 Check:
 
@@ -1044,7 +1044,7 @@ Mark each as:
 
 ---
 
-## 3️⃣ Design & Architecture Review
+## Design & Architecture Review
 
 Evaluate:
 
@@ -1067,7 +1067,7 @@ Highlight:
 
 ---
 
-## 4️⃣ Testing Review
+## Testing Review
 
 Evaluate:
 
@@ -1084,7 +1084,7 @@ Indicate coverage gaps if any.
 
 ---
 
-## 5️⃣ Remaining Work
+##  Remaining Work
 
 Clearly list:
 
@@ -1094,7 +1094,7 @@ Clearly list:
 
 ---
 
-## 6️⃣ Overall Assessment
+##  Overall Assessment
 
 Provide:
 
@@ -1123,3 +1123,43 @@ Use clear sections:
 
 Do NOT modify any source code.
 Only generate REVIEW.md.
+
+
+Read all files in the repository.
+Read the file `development.md`.
+
+The goal of this document is to explain the development and thought process behind the project using clearly defined milestones.
+
+Tasks:
+
+1. Analyze:
+   - The current `development.md`
+   - The Git commit history
+   - The files introduced or modified across commits
+
+2. For each milestone listed in `development.md`:
+   - Expand it with a short but meaningful description of:
+     - What was implemented during that phase
+     - What design decisions were made
+     - What technical concerns were addressed
+   - Keep the explanation high-level.
+   - Do NOT add excessive detail or low-level code discussion.
+   - Keep it concise and professional.
+   - Preserve the milestone numbering and structure.
+
+3. Check if there were some milestones missing and can be added to the list
+
+4. Improve wording and grammar throughout the document.
+   - Make it read like a structured development narrative.
+   - Keep the tone professional and reviewer-facing.
+   - Do not exaggerate or add features that were not implemented.
+
+5. Do NOT:
+   - Modify project code.
+   - Invent development steps that did not occur.
+
+Output:
+
+- Rewrite and polish the full `development.md` file.
+- Maintain Markdown formatting.
+- Keep the document compact and readable.
