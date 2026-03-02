@@ -7,6 +7,7 @@
   - [Update during get all](#update-during-get-all)
   - [Project setup](#project-setup)
   - [APIs](#apis)
+  - [Remaining](#remaining)
 
 ## Objective
 
@@ -324,3 +325,18 @@ Creates rest api endpoints for post create and get single todo
 Added the database update for move state to DUE
 
 Added rest endpoint for get all todos
+
+All end points are added.
+
+## Remaining
+
+Documentation
+- Polish readme.
+- Add AI usage guide.
+- Add AI prompts guide.
+- Add Development progress guide.
+- Validation of input.
+- OpenAPI documentation.
+- Pagination out of scope.
+- Scheduler out of scope.
+- Auth out of scope
