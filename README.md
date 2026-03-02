@@ -90,6 +90,9 @@ Out of Scope
   - In a production system, a scheduled job could batch-update overdue items to reduce per-request synchronization overhead.
 - Pagination for listing todos is not implemented.
   - The todo list is assumed to be small enough to be manageable in memory.
+- Concurrency control is not implemented.
+  - Concurrent modifications currently follow a last-write-wins model.
+  - In a production environment, a @Version field (optimistic locking) could be introduced to detect and reject conflicting updates with a 409 Conflict response.
 
 ## Run service with Docker
 
@@ -142,4 +145,4 @@ Service runs on `http://localhost:8080`.
 - [Development process and milestones](docs/Development.md)
 - [Architecture Overview](docs/Architecture.md)
 - [API example usage](docs/Examples.md)
-- [AI usage](docs/AI_Usage.md)
+- [How AI was used in this project](docs/AI_Usage.md)

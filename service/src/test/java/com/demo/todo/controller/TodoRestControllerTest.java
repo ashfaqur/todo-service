@@ -2,6 +2,7 @@ package com.demo.todo.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -231,7 +232,25 @@ class TodoRestControllerTest {
     @Test
     void listTodosReturns400ForInvalidAllParam() throws Exception {
         mockMvc.perform(get("/todos").param("all", "invalid"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Invalid value for parameter: all"))
+                .andExpect(jsonPath("$.path").value("/todos"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
+
+        verifyNoInteractions(todoService);
+    }
+
+    @Test
+    void getTodoByIdReturns400ForNonNumericId() throws Exception {
+        mockMvc.perform(get("/todos/not-a-number"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Invalid value for parameter: id"))
+                .andExpect(jsonPath("$.path").value("/todos/not-a-number"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
+
+        verifyNoInteractions(todoService);
     }
 
     @Test
@@ -269,6 +288,24 @@ class TodoRestControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void updateDescriptionReturns400ForNonNumericId() throws Exception {
+        mockMvc.perform(patch("/todos/not-a-number/description")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "description": "Updated"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("Invalid value for parameter: id"))
+                .andExpect(jsonPath("$.path").value("/todos/not-a-number/description"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
+
+        verifyNoInteractions(todoService);
     }
 
     @Test

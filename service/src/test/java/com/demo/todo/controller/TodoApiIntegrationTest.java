@@ -1,6 +1,7 @@
 package com.demo.todo.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -130,6 +131,26 @@ class TodoApiIntegrationTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").value("OVERDUE_REOPEN_FORBIDDEN"))
                 .andExpect(jsonPath("$.path").value("/todos/%d/not-done".formatted(saved.getId())));
+    }
+
+    @Test
+    void invalidAllParamReturnsStandardErrorResponse() throws Exception {
+        mockMvc.perform(get("/todos").param("all", "invalid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message", containsString("all")))
+                .andExpect(jsonPath("$.path").value("/todos"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
+    }
+
+    @Test
+    void invalidPathIdReturnsStandardErrorResponse() throws Exception {
+        mockMvc.perform(get("/todos/not-a-number"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message", containsString("id")))
+                .andExpect(jsonPath("$.path").value("/todos/not-a-number"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
     }
 
     @TestConfiguration
