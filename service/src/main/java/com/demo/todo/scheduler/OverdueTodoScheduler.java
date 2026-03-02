@@ -1,13 +1,14 @@
 package com.demo.todo.scheduler;
 
 import com.demo.todo.service.DataService;
-import java.time.Clock;
-import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.time.Clock;
+import java.time.Instant;
 
 /**
  * Scheduled background job that transitions overdue todos to {@code PAST_DUE}.
@@ -30,7 +31,7 @@ public class OverdueTodoScheduler {
      * Creates the scheduler with service and time dependencies.
      *
      * @param dataService transaction boundary for overdue synchronization
-     * @param clock clock used to compute the current timestamp
+     * @param clock       clock used to compute the current timestamp
      */
     public OverdueTodoScheduler(DataService dataService, Clock clock) {
         this.dataService = dataService;

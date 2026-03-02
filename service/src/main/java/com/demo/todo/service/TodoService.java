@@ -1,18 +1,15 @@
 package com.demo.todo.service;
 
-import com.demo.todo.dto.CreateTodoRequest;
-import com.demo.todo.dto.TodoResponse;
-import com.demo.todo.dto.UpdateDescriptionRequest;
-import com.demo.todo.dto.TodosListMeta;
-import com.demo.todo.dto.TodosListResponse;
+import com.demo.todo.dto.*;
 import com.demo.todo.exception.InvalidTodoInputException;
 import com.demo.todo.exception.TodoNotFoundException;
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
+import org.springframework.stereotype.Service;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
-import org.springframework.stereotype.Service;
 
 /**
  * Service-layer orchestrator for Todo API use cases.
@@ -30,7 +27,7 @@ public class TodoService {
      * Creates a new service instance.
      *
      * @param dataService data access/service boundary for persistence operations
-     * @param clock clock used to evaluate and stamp time-dependent behavior
+     * @param clock       clock used to evaluate and stamp time-dependent behavior
      */
     public TodoService(DataService dataService, Clock clock) {
         this.dataService = dataService;
@@ -93,7 +90,7 @@ public class TodoService {
     /**
      * Updates todo description after state synchronization and guards.
      *
-     * @param id todo identifier
+     * @param id      todo identifier
      * @param request description update payload
      * @return updated todo mapped for API response
      */

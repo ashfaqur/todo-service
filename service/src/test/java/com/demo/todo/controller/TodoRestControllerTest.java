@@ -1,30 +1,12 @@
 package com.demo.todo.controller;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.demo.todo.dto.TodoResponse;
-import com.demo.todo.dto.UpdateDescriptionRequest;
 import com.demo.todo.dto.TodosListMeta;
 import com.demo.todo.dto.TodosListResponse;
-import com.demo.todo.exception.GlobalExceptionHandler;
-import com.demo.todo.exception.InvalidTodoInputException;
-import com.demo.todo.exception.OverdueReopenForbiddenException;
-import com.demo.todo.exception.PastDueImmutableException;
-import com.demo.todo.exception.TodoNotFoundException;
+import com.demo.todo.dto.UpdateDescriptionRequest;
+import com.demo.todo.exception.*;
 import com.demo.todo.model.TodoStatus;
 import com.demo.todo.service.TodoService;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -34,7 +16,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TodoRestController.class)
 @Import(GlobalExceptionHandler.class)

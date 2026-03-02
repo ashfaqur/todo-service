@@ -2,9 +2,6 @@ package com.demo.todo.exception;
 
 import com.demo.todo.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +10,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.stream.Collectors;
 
 /**
  * Global exception mapper for REST-layer failures.
@@ -37,7 +38,7 @@ public class GlobalExceptionHandler {
     /**
      * Maps missing todo errors to HTTP 404.
      *
-     * @param ex not-found exception
+     * @param ex      not-found exception
      * @param request current HTTP request
      * @return standardized error payload
      */
@@ -51,7 +52,7 @@ public class GlobalExceptionHandler {
     /**
      * Maps business input validation errors to HTTP 400.
      *
-     * @param ex invalid-input exception
+     * @param ex      invalid-input exception
      * @param request current HTTP request
      * @return standardized error payload
      */
@@ -65,7 +66,7 @@ public class GlobalExceptionHandler {
     /**
      * Maps immutable past-due state violations to HTTP 409.
      *
-     * @param ex immutability exception
+     * @param ex      immutability exception
      * @param request current HTTP request
      * @return standardized error payload
      */
@@ -79,7 +80,7 @@ public class GlobalExceptionHandler {
     /**
      * Maps overdue reopen rule violations to HTTP 409.
      *
-     * @param ex reopen-forbidden exception
+     * @param ex      reopen-forbidden exception
      * @param request current HTTP request
      * @return standardized error payload
      */
@@ -94,7 +95,7 @@ public class GlobalExceptionHandler {
     /**
      * Maps bean validation errors to HTTP 400.
      *
-     * @param ex bean validation exception
+     * @param ex      bean validation exception
      * @param request current HTTP request
      * @return standardized error payload with aggregated field messages
      */
@@ -123,7 +124,7 @@ public class GlobalExceptionHandler {
     /**
      * Maps malformed JSON or type coercion failures to HTTP 400.
      *
-     * @param ex unreadable message exception
+     * @param ex      unreadable message exception
      * @param request current HTTP request
      * @return standardized error payload
      */

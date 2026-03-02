@@ -1,32 +1,33 @@
 package com.demo.todo.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.demo.todo.dto.CreateTodoRequest;
 import com.demo.todo.dto.TodoResponse;
-import com.demo.todo.dto.UpdateDescriptionRequest;
 import com.demo.todo.dto.TodosListResponse;
+import com.demo.todo.dto.UpdateDescriptionRequest;
 import com.demo.todo.exception.InvalidTodoInputException;
 import com.demo.todo.exception.OverdueReopenForbiddenException;
 import com.demo.todo.exception.PastDueImmutableException;
 import com.demo.todo.exception.TodoNotFoundException;
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TodoServiceTest {

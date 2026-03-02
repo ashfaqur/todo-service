@@ -1,20 +1,6 @@
 package com.demo.todo.openapi;
 
-import static com.demo.todo.openapi.OpenApiExamples.CREATE_TODO_REQUEST_EXAMPLE;
-import static com.demo.todo.openapi.OpenApiExamples.ERROR_INVALID_REQUEST_EXAMPLE;
-import static com.demo.todo.openapi.OpenApiExamples.ERROR_NOT_FOUND_EXAMPLE;
-import static com.demo.todo.openapi.OpenApiExamples.ERROR_OVERDUE_REOPEN_EXAMPLE;
-import static com.demo.todo.openapi.OpenApiExamples.ERROR_PAST_DUE_EXAMPLE;
-import static com.demo.todo.openapi.OpenApiExamples.TODOS_LIST_RESPONSE_EXAMPLE;
-import static com.demo.todo.openapi.OpenApiExamples.TODO_RESPONSE_DONE_EXAMPLE;
-import static com.demo.todo.openapi.OpenApiExamples.TODO_RESPONSE_NOT_DONE_EXAMPLE;
-import static com.demo.todo.openapi.OpenApiExamples.UPDATE_DESCRIPTION_REQUEST_EXAMPLE;
-
-import com.demo.todo.dto.CreateTodoRequest;
-import com.demo.todo.dto.ErrorResponse;
-import com.demo.todo.dto.TodoResponse;
-import com.demo.todo.dto.TodosListResponse;
-import com.demo.todo.dto.UpdateDescriptionRequest;
+import com.demo.todo.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -30,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import static com.demo.todo.openapi.OpenApiExamples.*;
 
 /**
  * OpenAPI documentation contract for todo endpoints.

@@ -6,11 +6,12 @@ import com.demo.todo.exception.TodoNotFoundException;
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
 import com.demo.todo.repository.TodoRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Transaction boundary for todo persistence and state transitions.
@@ -56,7 +57,7 @@ public class DataService {
     /**
      * Synchronizes overdue status for a single item and then loads it.
      *
-     * @param id todo identifier
+     * @param id  todo identifier
      * @param now current timestamp used for overdue evaluation
      * @return optional synchronized todo when found
      */
@@ -96,11 +97,11 @@ public class DataService {
     /**
      * Updates description for a mutable todo after overdue synchronization.
      *
-     * @param id todo identifier
+     * @param id          todo identifier
      * @param description normalized description value
-     * @param now current timestamp used for overdue evaluation
+     * @param now         current timestamp used for overdue evaluation
      * @return updated todo entity
-     * @throws TodoNotFoundException when no todo exists for the given id
+     * @throws TodoNotFoundException     when no todo exists for the given id
      * @throws PastDueImmutableException when the todo is {@code PAST_DUE}
      */
     @Transactional(noRollbackFor = PastDueImmutableException.class)
@@ -116,10 +117,10 @@ public class DataService {
     /**
      * Marks a mutable todo as done.
      *
-     * @param id todo identifier
+     * @param id  todo identifier
      * @param now current timestamp used for overdue evaluation and {@code doneAt}
      * @return updated or unchanged todo entity when already done
-     * @throws TodoNotFoundException when no todo exists for the given id
+     * @throws TodoNotFoundException     when no todo exists for the given id
      * @throws PastDueImmutableException when the todo is {@code PAST_DUE}
      */
     @Transactional(noRollbackFor = PastDueImmutableException.class)
@@ -139,11 +140,11 @@ public class DataService {
     /**
      * Marks a mutable todo as not done.
      *
-     * @param id todo identifier
+     * @param id  todo identifier
      * @param now current timestamp used for overdue evaluation
      * @return updated todo entity
-     * @throws TodoNotFoundException when no todo exists for the given id
-     * @throws PastDueImmutableException when the todo is {@code PAST_DUE}
+     * @throws TodoNotFoundException           when no todo exists for the given id
+     * @throws PastDueImmutableException       when the todo is {@code PAST_DUE}
      * @throws OverdueReopenForbiddenException when reopening an overdue {@code DONE} item
      */
     @Transactional(noRollbackFor = {PastDueImmutableException.class, OverdueReopenForbiddenException.class})

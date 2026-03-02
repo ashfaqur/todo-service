@@ -11,13 +11,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class TodoApplication {
 
-	/**
-	 * Starts the Todo service process.
-	 *
-	 * @param args command-line arguments passed at startup
-	 */
-	public static void main(String[] args) {
-		SpringApplication.run(TodoApplication.class, args);
-	}
+    /**
+     * Starts the Todo service process.
+     *
+     * @param args command-line arguments passed at startup
+     */
+    public static void main(String[] args) {
+        SpringApplication.run(TodoApplication.class, args);
+    }
 
 }

@@ -1,15 +1,16 @@
 package com.demo.todo.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
-import java.time.Instant;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+
+import java.time.Instant;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 class TodoRepositoryIntegrationTest {

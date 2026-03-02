@@ -2,17 +2,18 @@ package com.demo.todo.dto;
 
 import com.demo.todo.model.TodoStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.Instant;
 
 /**
  * DTO representing a single todo in API responses.
  *
- * @param id todo identifier
+ * @param id          todo identifier
  * @param description todo description
- * @param status current todo status
- * @param createdAt creation timestamp
- * @param dueAt due timestamp
- * @param doneAt completion timestamp, if completed
+ * @param status      current todo status
+ * @param createdAt   creation timestamp
+ * @param dueAt       due timestamp
+ * @param doneAt      completion timestamp, if completed
  */
 @Schema(name = "TodoResponse", description = "Todo item returned by the API")
 public record TodoResponse(

@@ -1,14 +1,9 @@
 package com.demo.todo.scheduler;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
 import com.demo.todo.repository.TodoRepository;
 import com.demo.todo.service.DataService;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +12,12 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Import(OverdueTodoSchedulerIntegrationTest.ClockTestConfig.class)

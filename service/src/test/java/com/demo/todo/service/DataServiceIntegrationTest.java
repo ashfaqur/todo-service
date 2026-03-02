@@ -1,19 +1,20 @@
 package com.demo.todo.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.demo.todo.exception.OverdueReopenForbiddenException;
 import com.demo.todo.exception.PastDueImmutableException;
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
 import com.demo.todo.repository.TodoRepository;
-import java.time.Instant;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.time.Instant;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 class DataServiceIntegrationTest {

@@ -2,12 +2,13 @@ package com.demo.todo.repository;
 
 import com.demo.todo.model.Todo;
 import com.demo.todo.model.TodoStatus;
-import java.time.Instant;
-import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.time.Instant;
+import java.util.List;
 
 /**
  * Repository layer for todo persistence operations.
@@ -35,7 +36,7 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     /**
      * Transitions one overdue {@code NOT_DONE} record to {@code PAST_DUE}.
      *
-     * @param id target todo identifier
+     * @param id  target todo identifier
      * @param now timestamp used as overdue cutoff
      * @return number of updated rows
      */

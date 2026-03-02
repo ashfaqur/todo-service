@@ -1,14 +1,15 @@
 package com.demo.todo.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.Instant;
 
 /**
  * DTO for standardized API error payloads.
  *
- * @param error machine-readable error code
- * @param message human-readable error message
- * @param path request path that produced the error
+ * @param error     machine-readable error code
+ * @param message   human-readable error message
+ * @param path      request path that produced the error
  * @param timestamp error timestamp in UTC
  */
 @Schema(name = "ErrorResponse", description = "Standard error payload returned by API failures")

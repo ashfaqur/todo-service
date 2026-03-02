@@ -7,9 +7,10 @@ import com.demo.todo.dto.UpdateDescriptionRequest;
 import com.demo.todo.openapi.TodoApi;
 import com.demo.todo.service.TodoService;
 import jakarta.validation.Valid;
-import java.net.URI;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/todos")
