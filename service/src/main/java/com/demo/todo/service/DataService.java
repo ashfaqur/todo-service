@@ -83,6 +83,17 @@ public class DataService {
     }
 
     /**
+     * Synchronizes all overdue {@code NOT_DONE} todos to {@code PAST_DUE}.
+     *
+     * @param now current timestamp used for overdue evaluation
+     * @return number of transitioned records
+     */
+    @Transactional
+    public int syncOverdue(Instant now) {
+        return todoRepository.markOverdueAsPastDue(now);
+    }
+
+    /**
      * Updates description for a mutable todo after overdue synchronization.
      *
      * @param id todo identifier

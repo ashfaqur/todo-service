@@ -66,6 +66,9 @@ Overdue Behavior
   - before executing any mutation operations
 - Only `NOT_DONE` items are automatically transitioned to `PAST_DUE`.
 - `DONE` items are never auto-transitioned to `PAST_DUE`.
+- An optional background scheduler can also run overdue synchronization in batches.
+  - `todo.overdue-sync.scheduler.enabled` (default: `true`)
+  - `todo.overdue-sync.scheduler.fixed-delay` (default: `PT1M`)
 
 Immutability Rules
 - `PAST_DUE` items are immutable. Any attempt to modify them returns `409 Conflict`.
@@ -86,13 +89,12 @@ Timestamps
 
 Out of Scope
 - Authentication and authorization are not implemented.
-- A scheduler for background state transitions is not implemented.
-  - In a production system, a scheduled job could batch-update overdue items to reduce per-request synchronization overhead.
 - Pagination for listing todos is not implemented.
   - The todo list is assumed to be small enough to be manageable in memory.
 - Concurrency control is not implemented.
   - Concurrent modifications currently follow a last-write-wins model.
   - In a production environment, a @Version field (optimistic locking) could be introduced to detect and reject conflicting updates with a 409 Conflict response.
+- In multi-instance deployments, each instance may run the scheduler unless coordinated externally.
 
 ## Run service with Docker
 

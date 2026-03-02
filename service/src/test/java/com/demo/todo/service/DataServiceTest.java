@@ -116,6 +116,17 @@ class DataServiceTest {
     }
 
     @Test
+    void syncOverdueDelegatesToRepositoryAndReturnsCount() {
+        Instant now = Instant.parse("2026-03-01T10:00:00Z");
+        when(todoRepository.markOverdueAsPastDue(now)).thenReturn(3);
+
+        int updated = dataService.syncOverdue(now);
+
+        assertThat(updated).isEqualTo(3);
+        verify(todoRepository).markOverdueAsPastDue(now);
+    }
+
+    @Test
     void updateDescriptionUpdatesWhenMutable() {
         Instant now = Instant.parse("2026-03-01T10:00:00Z");
         Todo todo = new Todo();
