@@ -59,3 +59,11 @@ This document summarizes the project as a compact milestone narrative derived fr
 11. **Documentation consolidation and reviewer packaging**
     README and supporting documentation were iteratively refined, including document renames/reorganization and dedicated AI-usage notes.
     This phase focused on reviewer clarity and project traceability without changing runtime behavior.
+
+12. **OpenAPI documentation**
+    API documentation was formalized with Springdoc integration, centralized endpoint annotations, and reusable example payloads.
+    The intent was to keep controller code focused on runtime behavior while maintaining complete, reviewer-friendly API discoverability.
+
+13. **Scheduler implementation**
+    A periodic overdue synchronization job was introduced to complement request-time status synchronization.
+    Configurable scheduler controls (`enabled`, `fixed-delay`) were added to support both production runtime behavior and deterministic test setups.

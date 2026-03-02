@@ -8,6 +8,7 @@
   - [Project setup](#project-setup)
   - [APIs](#apis)
   - [Remaining](#remaining)
+  - [Project complete](#project-complete)
 
 ## Objective
 
@@ -340,3 +341,6 @@ Documentation
 - Pagination out of scope.
 - Scheduler out of scope.
 - Auth out of scope
+
+## Project complete
+

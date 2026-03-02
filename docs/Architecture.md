@@ -31,7 +31,9 @@ Primary package: `com.demo.todo`
 - `exception`
   - Domain exceptions plus `GlobalExceptionHandler` for consistent HTTP error mapping.
 - `config`
-  - `TimeConfig` (`Clock` bean) and `OpenApiConfig` metadata.
+  - `TimeConfig` (`Clock` bean), `OpenApiConfig` metadata, and `SchedulingConfig` (`@EnableScheduling`).
+- `scheduler`
+  - `OverdueTodoScheduler` runs periodic overdue synchronization when enabled by configuration.
 
 Design intent: keep HTTP concerns, business orchestration, transactions, and persistence responsibilities clearly separated.
 
@@ -52,7 +54,7 @@ Design intent: keep HTTP concerns, business orchestration, transactions, and per
 
 ### State machine rules
 - Overdue transition:
-  - `NOT_DONE -> PAST_DUE` happens during sync operations (not via background scheduler).
+  - `NOT_DONE -> PAST_DUE` happens during sync operations (API-time sync and optional background scheduler).
 - Mark done:
   - `NOT_DONE -> DONE` with `doneAt = now`.
   - `DONE -> DONE` is idempotent.
@@ -64,7 +66,9 @@ Design intent: keep HTTP concerns, business orchestration, transactions, and per
   - Reopening overdue `DONE` items is forbidden (`OVERDUE_REOPEN_FORBIDDEN`).
 
 ## 4. Overdue Synchronization Strategy
-The service uses **on-demand synchronization** rather than a scheduled job.
+The service uses a **hybrid synchronization strategy**:
+- API-time synchronization (before reads and writes) for request consistency.
+- Optional scheduled background synchronization for eventual catch-up when items are idle.
 
 Sync timing:
 - Before reads:
@@ -72,6 +76,12 @@ Sync timing:
   - List (`GET /todos`): bulk sync, then query list.
 - Before writes:
   - Update/mark done/mark not-done all sync by id first.
+- In background:
+  - `OverdueTodoScheduler` periodically calls `DataService.syncOverdue(now)`.
+  - Scheduler is controlled by:
+    - `todo.overdue-sync.scheduler.enabled` (default: `true`)
+    - `todo.overdue-sync.scheduler.fixed-delay` (default: `PT1M`)
+  - `@ConditionalOnProperty` allows disabling scheduler (for tests or specific deployments).
 
 List vs single sync:
 - Bulk list sync updates all overdue `NOT_DONE` rows.
@@ -122,7 +132,7 @@ Why `Clock` injection matters:
 - Tests can use fixed timestamps, making overdue and boundary behavior deterministic and repeatable.
 
 ## 7. Trade-offs and Future Improvements
-- Add scheduler for background overdue transitions to reduce per-request sync overhead.
+- Consider external coordination/leader election for scheduler execution in multi-instance deployments.
 - Add pagination for large todo lists.
 - Add authentication and authorization for multi-user scenarios.
 - Consider UUID-based identifiers for distributed/multi-database deployments.
