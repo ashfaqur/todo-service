@@ -140,5 +140,6 @@ Service runs on `http://localhost:8080`.
 
 ## Documentation:
 - [Development process and milestones](docs/Development.md)
+- [Architecture Overview](docs/Architecture.md)
 - [API example usage](docs/Examples.md)
 - [AI usage](docs/AI_Usage.md)
