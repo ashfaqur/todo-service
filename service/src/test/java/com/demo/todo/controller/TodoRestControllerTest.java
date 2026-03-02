@@ -87,6 +87,23 @@ class TodoRestControllerTest {
     }
 
     @Test
+    void createTodoReturns400ForDescriptionTooLong() throws Exception {
+        mockMvc.perform(post("/todos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "description": "%s",
+                                  "dueAt": "2026-03-01T11:00:00Z"
+                                }
+                                """.formatted("a".repeat(1001))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("description: description must be at most 1000 characters"))
+                .andExpect(jsonPath("$.path").value("/todos"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
+    }
+
+    @Test
     void getTodoReturns404WhenIdNotFound() throws Exception {
         when(todoService.getTodoById(99L)).thenThrow(new TodoNotFoundException(99L));
 
@@ -173,6 +190,22 @@ class TodoRestControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void updateDescriptionReturns400ForDescriptionTooLong() throws Exception {
+        mockMvc.perform(patch("/todos/3/description")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "description": "%s"
+                                }
+                                """.formatted("a".repeat(1001))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("description: description must be at most 1000 characters"))
+                .andExpect(jsonPath("$.path").value("/todos/3/description"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-01T10:00:00Z"));
     }
 
     @Test

@@ -56,6 +56,7 @@ Base path: `/todos`
 
 Creation Rules
 - `description` and `dueAt` are mandatory fields when creating a todo.
+- `description` has a limit of 1000 characters.
 - `dueAt` must be greater than or equal to the current time at creation (`dueAt >= now`).
 - A `dueAt` in the past results in `400 Bad Request`.
 
@@ -136,3 +137,8 @@ Service runs on `http://localhost:8080`.
 - Health: `http://localhost:8080/actuator/health`
 - H2 Console: `http://localhost:8080/h2`
 - OpenAPI UI: `http://localhost:8080/swagger-ui.html`
+
+## Documentation:
+- [Development process and milestones](docs/Development.md)
+- [API example usage](docs/Examples.md)
+- [AI usage](docs/AI_Usage.md)
